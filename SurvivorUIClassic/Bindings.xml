@@ -1,0 +1,8 @@
+<Bindings>
+	<Binding name="SUIC_ENEMYPLATES" header="SUIC">
+		if SUIC_ToggleEnemyPlates then SUIC_ToggleEnemyPlates() end
+	</Binding>
+	<Binding name="SUIC_FRIENDPLATES">
+		if SUIC_ToggleFriendPlates then SUIC_ToggleFriendPlates() end
+	</Binding>
+</Bindings>

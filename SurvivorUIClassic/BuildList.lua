@@ -1,38 +1,39 @@
 -- SurvivorUI Classic - Copyright (C) 2026 morderous - GPL-3.0 - github.com/morderous/survivorui-classic
--- SurvivorUI Classic: the build list. The run's six spell slots, filled or
--- not, each spell with its icon, its name as the game writes it, its cooldown
--- and its rank; the racial apart at the bottom (it takes no slot). The empty
--- slots show, since how many are left matters at every card. Hover a spell
--- for its tooltip.
+-- SurvivorUI Classic: the build list, in the right column under the run
+-- tracker. Its title the three numbers every spell grows by (Damage, Crit,
+-- Crit Dmg, as the stats panel reads them) and the slots filled. The run's
+-- six spell slots, filled or not, each spell with its icon, its name as the
+-- game writes it, its biggest crit this run (Crits.lua), its cooldown and its
+-- rank; the racial apart at the bottom (it takes no slot). The empty slots
+-- show, since how many are left matters at every card. Hover a spell for its
+-- tooltip.
 --
 -- From the game's addon API (AZS_SPELLS, your racial last): its spells sit on
 -- the action bar in the list's order, the racial on button 12. In a run only.
 
 local SLOTS = 6
 local RACIAL_SLOT = 12
-local WIDTH = 210
-local ROW = 22
-local TOP = 26
+local W = SUIC.WIDTH
+local PAD = SUIC.PAD
+local ROW = 15
+local TOP = SUIC.TITLE + 16
 local EMPTY = "Interface\\PaperDoll\\UI-Backpack-EmptySlot"
+local RANK_COLUMN = 20
+local CD_COLUMN = 34
+local CRIT_COLUMN = 36
+local NAME_ROOM = W - 2 * PAD - (ROW + 3) - RANK_COLUMN - CD_COLUMN - CRIT_COLUMN - 4
 
-local panel = CreateFrame("Frame", "SUICBuildList", UIParent)
-panel:SetWidth(WIDTH)
-panel:SetHeight(TOP + (SLOTS + 1) * ROW + 14)
-panel:SetBackdrop(SUIC.BACKDROP)
-panel:SetBackdropColor(0, 0, 0, 0.7)
-panel:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
-panel:Hide()
+local panel = SUIC.Window("SUICBuildList", "Build")
+panel:SetHeight(TOP + (SLOTS + 1) * ROW + 5 + 6)
 
-local function Home(f)
-	f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -12, -230)
-end
-Home(panel)
-
-local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-title:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -9)
-title:SetText("Build")
-local count = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-count:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -10, -11)
+-- The three numbers, a second line under the title, the rule under them.
+local stats = SUIC.Text(panel, "GameFontHighlightSmall", 9)
+stats:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -SUIC.TITLE + 2)
+stats:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PAD, -SUIC.TITLE + 2)
+stats:SetJustifyH("LEFT")
+panel.rule:ClearAllPoints()
+panel.rule:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, -SUIC.TITLE - 12)
+panel.rule:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -6, -SUIC.TITLE - 12)
 
 -- The spell's name as its button's tooltip gives it, in the game's language.
 local scan = CreateFrame("GameTooltip", "SUICScanTip", nil, "GameTooltipTemplate")
@@ -58,39 +59,57 @@ end
 local rows = {}
 for index = 1, SLOTS + 1 do
 	local row = CreateFrame("Frame", nil, panel)
-	row:SetWidth(WIDTH - 16)
-	row:SetHeight(ROW - 2)
+	row:SetWidth(W - 2 * PAD)
+	row:SetHeight(ROW)
 	local y = -TOP - (index - 1) * ROW
 	if index > SLOTS then
-		y = y - 6
+		y = y - 5
 	end
-	row:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, y)
+	row:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, y)
 	row:EnableMouse(true)
 	row:SetScript("OnEnter", RowEnter)
 	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	row.icon = row:CreateTexture(nil, "ARTWORK")
-	row.icon:SetWidth(18)
-	row.icon:SetHeight(18)
+	row.icon:SetWidth(ROW - 2)
+	row.icon:SetHeight(ROW - 2)
 	row.icon:SetPoint("LEFT", row, "LEFT", 0, 0)
 	row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-	row.name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+	row.name = SUIC.Text(row, "GameFontHighlightSmall")
+	row.name:SetPoint("LEFT", row.icon, "RIGHT", 5, 0)
 	row.name:SetJustifyH("LEFT")
-	row.name:SetWidth(110)
-	row.rank = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	row.rank:SetPoint("RIGHT", row, "RIGHT", 0, 0)
-	row.cd = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	row.cd:SetPoint("RIGHT", row, "RIGHT", -42, 0)
+	row.name:SetWidth(NAME_ROOM)
+	row.name:SetHeight(ROW)
+	-- Three columns at the right, each a fixed width, its text in its
+	-- middle: the biggest crit, the cooldown, the rank.
+	row.rank = SUIC.Text(row, "GameFontNormalSmall")
+	row.rank:SetPoint("CENTER", row, "RIGHT", -RANK_COLUMN / 2 + 1, 0)
+	row.cd = SUIC.Text(row, "GameFontDisableSmall")
+	row.cd:SetPoint("CENTER", row, "RIGHT", -RANK_COLUMN - CD_COLUMN / 2 + 1, 0)
+	row.crit = SUIC.Text(row, "GameFontHighlightSmall")
+	row.crit:SetPoint("CENTER", row, "RIGHT", -RANK_COLUMN - CD_COLUMN - CRIT_COLUMN / 2 + 1, 0)
+	row.crit:SetTextColor(1, 0.55, 0.25)
 	rows[index] = row
+end
+
+-- A faint line between the columns: the name, the biggest crit, the
+-- cooldown, the rank.
+local DIVIDERS = { RANK_COLUMN - 3, RANK_COLUMN + CD_COLUMN - 3, RANK_COLUMN + CD_COLUMN + CRIT_COLUMN - 3 }
+for index = 1, table.getn(DIVIDERS) do
+	local line = panel:CreateTexture(nil, "ARTWORK")
+	line:SetTexture(SUIC.FLAT)
+	line:SetVertexColor(1, 1, 1, 0.08)
+	line:SetWidth(1)
+	line:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PAD - DIVIDERS[index], -TOP)
+	line:SetPoint("BOTTOMRIGHT", panel, "TOPRIGHT", -PAD - DIVIDERS[index], -TOP - (SLOTS + 1) * ROW - 5)
 end
 
 -- A line between the slots and the racial.
 local rule = panel:CreateTexture(nil, "ARTWORK")
 rule:SetTexture(SUIC.FLAT)
-rule:SetVertexColor(0.6, 0.6, 0.6, 0.35)
+rule:SetVertexColor(0.6, 0.6, 0.6, 0.3)
 rule:SetHeight(1)
-rule:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -TOP - SLOTS * ROW - 1)
-rule:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -10, -TOP - SLOTS * ROW - 1)
+rule:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -TOP - SLOTS * ROW - 2)
+rule:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PAD, -TOP - SLOTS * ROW - 2)
 
 local function Cooldown(entry)
 	local seconds = tonumber(entry.cdmax) or 0
@@ -102,16 +121,43 @@ local function Cooldown(entry)
 	return math.floor(seconds + 0.5).."s"
 end
 
+-- A name that fits its room: whole, else its words after the first cut to
+-- three letters and a dot ("Demonic Emp."), else cut at the end.
+local function Shorten(text, name)
+	text:SetText(name)
+	if text:GetStringWidth() <= NAME_ROOM then
+		return
+	end
+	local first = true
+	local short = string.gsub(name, "(%S+)", function(word)
+		if first then
+			first = false
+			return word
+		end
+		if string.len(word) > 4 then
+			return string.sub(word, 1, 3).."."
+		end
+		return word
+	end)
+	text:SetText(short)
+	while text:GetStringWidth() > NAME_ROOM and string.len(short) > 4 do
+		short = string.sub(short, 1, string.len(short) - 1)
+		text:SetText(short..".")
+	end
+end
+
 local function Fill(row, entry, slot, racial)
 	row.slot = slot
 	row.icon:SetTexture(GetActionTexture(slot) or EMPTY)
-	local name = SpellName(slot) or entry.key or "?"
+	Shorten(row.name, SpellName(slot) or entry.key or "?")
 	if racial then
-		name = name.." |cff8a8a8a(racial)|r"
+		row.name:SetTextColor(0.75, 0.75, 0.75)
+	else
+		row.name:SetTextColor(1, 1, 1)
 	end
-	row.name:SetText(name)
-	row.rank:SetText(entry.rank and ("Rank "..entry.rank) or "")
+	row.rank:SetText(entry.rank and ("R"..entry.rank) or "")
 	row.cd:SetText(Cooldown(entry))
+	row.key = entry.key
 	row:Show()
 end
 
@@ -121,7 +167,30 @@ local function Empty(row)
 	row.name:SetText("|cff8a8a8aEmpty|r")
 	row.rank:SetText("")
 	row.cd:SetText("")
+	row.crit:SetText("")
+	row.key = nil
 	row:Show()
+end
+
+local function Pct(value)
+	return math.floor(value * 100 + 0.5).."%"
+end
+
+-- The three numbers and each spell's biggest crit, read again every second.
+local function Numbers()
+	local s = AZS_STATS
+	if s and s.dmg then
+		stats:SetText("|cffffd100Damage|r "..(s.dmg >= 1 and "+" or "")..Pct(s.dmg - 1)
+			.."    |cffffd100Crit|r "..string.format("%.1f%%", (s.crit or 0) * 100)
+			.."    |cffffd100Crit Dmg|r "..Pct(s.cm or 0))
+	else
+		stats:SetText("")
+	end
+	for index = 1, table.getn(rows) do
+		local row = rows[index]
+		local crit = row.key and SUIC.BiggestCrit(row.key)
+		row.crit:SetText(crit and SUIC.Short(crit) or "")
+	end
 end
 
 local function Draw()
@@ -142,10 +211,11 @@ local function Draw()
 		rows[SLOTS + 1]:Hide()
 	end
 	if slotted >= SLOTS then
-		count:SetText("|cffff8080"..SLOTS.." / "..SLOTS.."|r")
+		panel.note:SetText("|cffff8080"..SLOTS.."/"..SLOTS.."|r")
 	else
-		count:SetText(slotted.." / "..SLOTS)
+		panel.note:SetText(slotted.."/"..SLOTS)
 	end
+	Numbers()
 end
 
 local function Refresh()
@@ -158,11 +228,17 @@ local function Refresh()
 		panel:Hide()
 	end
 end
-SUIC.RefreshBuildList = Refresh
+SUIC.RefreshBuildList = function()
+	Refresh()
+	SUIC.SeatColumn()
+end
 
 local watch = CreateFrame("Frame")
 watch:SetScript("OnEvent", function()
-	if event == "CHAT_MSG_ADDON" and arg1 ~= "AZSSPELLS" and arg1 ~= "AZSZONE" then
+	if event == "CHAT_MSG_ADDON" and arg1 == "AZS" then
+		Numbers()
+		return
+	elseif event == "CHAT_MSG_ADDON" and arg1 ~= "AZSSPELLS" and arg1 ~= "AZSZONE" then
 		return
 	end
 	Refresh()
@@ -179,13 +255,16 @@ watch:SetScript("OnUpdate", function()
 	local wanted = SUIC.DB().buildList and SUIC.InRun() and true or false
 	if wanted ~= (panel:IsShown() and true or false) then
 		Refresh()
+	elseif wanted then
+		Numbers()
 	end
 end)
 watch:Hide()
 
 SUIC.OnStart(function()
-	SUIC.AddPiece("build", "Build list", panel, Home)
-	SUIC.OverCards(panel, true)
+	SUIC.ColumnHome("build")(panel)
+	SUIC.AddPiece("build", "Build list", panel, SUIC.ColumnHome("build"))
+	SUIC.OverCards(panel)
 	watch:RegisterEvent("CHAT_MSG_ADDON")
 	watch:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 	watch:RegisterEvent("PLAYER_ENTERING_WORLD")

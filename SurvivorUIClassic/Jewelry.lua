@@ -1,9 +1,11 @@
 -- SurvivorUI Classic - Copyright (C) 2026 morderous - GPL-3.0 - github.com/morderous/survivorui-classic
--- SurvivorUI Classic: the jewelry worn this run. The neck, the two rings and
--- the two trinkets, each in its slot as the character pane shows them: the
--- piece's icon, its name in its quality's color and what it gives in short
--- ("+24% CRIT DMG  +10% CDR"), read off its tooltip. Hover a piece for its
--- tooltip. In a run only.
+-- SurvivorUI Classic: the jewelry worn this run, in the right column under the
+-- build list. The neck, the two rings and the two trinkets, each in its slot:
+-- the piece's icon, its name in its quality's color (on one line: a class
+-- amulet too long, "Charm of the Fated Hour: Call of Flame", by its spell
+-- alone, "Call of Flame"; else cut short) and what it gives in short ("+24%
+-- CRIT DMG  +10% CDR"), read off its tooltip. Hover a piece for
+-- its tooltip. In a run only.
 
 local SLOTS = {
 	{ 2, "Neck", "Interface\\PaperDoll\\UI-PaperDoll-Slot-Neck" },
@@ -12,26 +14,13 @@ local SLOTS = {
 	{ 13, "Trinket", "Interface\\PaperDoll\\UI-PaperDoll-Slot-Trinket" },
 	{ 14, "Trinket", "Interface\\PaperDoll\\UI-PaperDoll-Slot-Trinket" },
 }
-local WIDTH = 230
-local ROW = 30
-local TOP = 26
+local W = SUIC.WIDTH
+local PAD = SUIC.PAD
+local ROW = 22                  -- two lines: the name, what it gives just under
+local TOP = SUIC.TITLE + 4
 
-local panel = CreateFrame("Frame", "SUICJewelry", UIParent)
-panel:SetWidth(WIDTH)
-panel:SetHeight(TOP + table.getn(SLOTS) * ROW + 8)
-panel:SetBackdrop(SUIC.BACKDROP)
-panel:SetBackdropColor(0, 0, 0, 0.7)
-panel:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
-panel:Hide()
-
-local function Home(f)
-	f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -12, -420)
-end
-Home(panel)
-
-local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-title:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -9)
-title:SetText("Jewelry")
+local panel = SUIC.Window("SUICJewelry", "Jewelry")
+panel:SetHeight(TOP + table.getn(SLOTS) * ROW + 5)
 
 ------------------------------------------------------------------------------
 -- What a piece gives, in short: each tooltip line with a number, its number
@@ -108,6 +97,26 @@ end
 ------------------------------------------------------------------------------
 -- The rows.
 
+local NAME_ROOM = W - 2 * PAD - ROW - 2
+
+-- A piece's name on one line: whole, else a class amulet's spell alone (the
+-- part after its colon), else cut with dots.
+local function Fit(text, name, color)
+	text:SetText("|c"..color..name.."|r")
+	if text:GetStringWidth() <= NAME_ROOM then
+		return
+	end
+	local _, _, spell = string.find(name, ": (.+)$")
+	if spell then
+		name = spell
+		text:SetText("|c"..color..name.."|r")
+	end
+	while text:GetStringWidth() > NAME_ROOM and string.len(name) > 4 do
+		name = string.sub(name, 1, string.len(name) - 1)
+		text:SetText("|c"..color..name.."...|r")
+	end
+end
+
 local function RowEnter()
 	GameTooltip:SetOwner(this, "ANCHOR_LEFT")
 	if GetInventoryItemLink("player", this.slot) then
@@ -122,43 +131,49 @@ end
 local rows = {}
 for index = 1, table.getn(SLOTS) do
 	local row = CreateFrame("Frame", nil, panel)
-	row:SetWidth(WIDTH - 16)
-	row:SetHeight(ROW - 2)
-	row:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -TOP - (index - 1) * ROW)
+	row:SetWidth(W - 2 * PAD)
+	row:SetHeight(ROW - 1)
+	row:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -TOP - (index - 1) * ROW)
 	row:EnableMouse(true)
 	row.slot, row.label, row.empty = SLOTS[index][1], SLOTS[index][2], SLOTS[index][3]
 	row:SetScript("OnEnter", RowEnter)
 	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	row.icon = row:CreateTexture(nil, "ARTWORK")
-	row.icon:SetWidth(24)
-	row.icon:SetHeight(24)
+	row.icon:SetWidth(ROW - 3)
+	row.icon:SetHeight(ROW - 3)
 	row.icon:SetPoint("LEFT", row, "LEFT", 0, 0)
-	row.name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 6, -1)
-	row.name:SetWidth(WIDTH - 50)
+	row.name = SUIC.Text(row, "GameFontHighlightSmall")
 	row.name:SetJustifyH("LEFT")
-	row.gives = row:CreateFontString(nil, "OVERLAY", "GameFontGreenSmall")
-	row.gives:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 6, 1)
-	row.gives:SetWidth(WIDTH - 50)
+	row.name:SetWidth(NAME_ROOM + 20)
+	row.name:SetHeight(12)
+	row.gives = SUIC.Text(row, "GameFontGreenSmall", 7)
+	row.gives:SetPoint("TOPLEFT", row.name, "BOTTOMLEFT", 0, -1)
 	row.gives:SetJustifyH("LEFT")
+	row.gives:SetWidth(W - 2 * PAD - ROW - 2)
 	rows[index] = row
 end
 
 local function Draw()
+	local worn = 0
 	for index = 1, table.getn(rows) do
 		local row = rows[index]
 		local link = GetInventoryItemLink("player", row.slot)
+		row.name:ClearAllPoints()
 		if link then
+			worn = worn + 1
 			row.icon:SetTexture(GetInventoryItemTexture("player", row.slot))
 			local _, _, color, name = string.find(link, "|c(%x+)|H.-|h%[(.-)%]|h")
-			row.name:SetText("|c"..(color or "ffffffff")..(name or "?").."|r")
+			Fit(row.name, name or "?", color or "ffffffff")
+			row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 5, 0)
 			row.gives:SetText(Short(row.slot, link))
 		else
 			row.icon:SetTexture(row.empty)
 			row.name:SetText("|cff8a8a8a"..row.label.."|r")
+			row.name:SetPoint("LEFT", row.icon, "RIGHT", 5, 0)
 			row.gives:SetText("")
 		end
 	end
+	panel.note:SetText(worn.." / "..table.getn(rows))
 end
 
 local function Refresh()
@@ -171,7 +186,10 @@ local function Refresh()
 		panel:Hide()
 	end
 end
-SUIC.RefreshJewelry = Refresh
+SUIC.RefreshJewelry = function()
+	Refresh()
+	SUIC.SeatColumn()
+end
 
 local watch = CreateFrame("Frame")
 watch:SetScript("OnEvent", function()
@@ -192,8 +210,9 @@ end)
 watch:Hide()
 
 SUIC.OnStart(function()
-	SUIC.AddPiece("jewelry", "Jewelry", panel, Home)
-	SUIC.OverCards(panel, true)
+	SUIC.ColumnHome("jewelry")(panel)
+	SUIC.AddPiece("jewelry", "Jewelry", panel, SUIC.ColumnHome("jewelry"))
+	SUIC.OverCards(panel)
 	watch:RegisterEvent("UNIT_INVENTORY_CHANGED")
 	watch:RegisterEvent("PLAYER_ENTERING_WORLD")
 	watch:Show()

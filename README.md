@@ -1,35 +1,124 @@
 # SurvivorUI Classic
 
-The game's own interface for Azeroth Survivors, with a few things more:
+The game's own interface for Azeroth Survivors, with a few things more, in the game's own look.
 
-- **Everything movable.** Click the gear on the minimap, then **Move frames**. Every piece gets a green box: drag a box to move its piece, right-click it to put the piece back. This covers the minimap, the player and target frames, the party, the action bar with its experience bar, the buffs, the chat and the addon's own pieces.
+SurvivorUI Classic is a branch of [Survivor UI](https://github.com/morderous/survivor-ui), by the same author: much of the same logic, in the game's own look instead of Survivor UI's. It works on its own: neither addon needs the other. Install the one you like, or both and choose.
+
+![In an endless run](screenshots/1-endless.webp)
+
+What it gives:
+
+- **Everything movable and sized.**
+  - Left-click the gear on the minimap for the options. Right-click it for **Move frames**: every piece gets a green box. Drag a box to move its piece; right-click it to put the piece back.
+  - Move frames covers the minimap, the player, target and party frames, the action bar with its experience bar, the buffs, the chat, the tooltip and the addon's own pieces.
+  - While the boxes are up, a grid shows, its middle lines in gold. A box let go snaps to the grid, to the screen's edges and middle, and to the other boxes' edges and middles.
+  - A place is kept from the point of the screen nearest the piece, so the layout keeps its shape at any interface size and any resolution: a piece in the middle stays in the middle, one by an edge stays by that edge.
+  - The options give each piece its own size, and it grows from where it stands. The whole interface is at 80%, its size a slider in General.
 - **Health in numbers.** The target frame shows an enemy's real health, `12.3k / 40.0k (31%)`, read from the game. Each frame can show Off, Value, Percent or Both.
-- **Run frame.** It sits at the top of the screen and shows:
+- **Run tracker,** after a Mythic+ timer, in a panel as the others:
   - the zone, with its Heroic level or Endless;
-  - the time against the final boss's second;
-  - a bar with a skull for every boss: grey to come, white next, orange alive, green slain;
-  - what comes next.
-- **Boss bars.** One thin bar for each boss alive.
-- **Build list.** Your six spell slots, filled or empty, with each spell's rank and cooldown, and your racial apart.
+  - your level and the lives left, from Heroic III on the run's affixes, the time in the middle against the final boss's second, and the run's bar with a skull for every boss;
+  - the kills, and the elites and guardians slain;
+  - the objectives: each boss with a check and the second it fell, its health while it is up (click to target it), and the next one's countdown; in endless mode, the next boss and the bosses slain;
+  - the guardians holding their lairs, in red when all are slain, green while some hold, orange while one fights, and the second each empty lair fills again (hover for every lair);
+  - your gold against the next cache's price, in the middle.
+  - What is done turns green.
+- **Boss bars.** The game's own as they look, the name in red over a long thin red bar, with two things more: they move, and a click targets the enemy (the one you target is framed in gold; hover for its health). The lair guardians and elites too, as you choose.
+- **Cooldown numbers** on the action buttons, down to the tenth of a second, the button darkened while it cools down.
+- **Summons and totems** as the game's buffs, over the action bar's right end and growing toward its middle: how many are out ("6/30" against a limit) and the time the first goes.
+- **Talent cooldowns** over the action bar's left end, growing toward its middle: a second life's wait (Divine Intervention, Cheat Death), a heal's, a proc's, a summoning talent's next; dark and counting while they wait, glowing gold when ready.
+- **Caches and lairs on the minimap**: loot bags for every cache, a skull for every guardian's lair (beating while it fights, faint with a green check while empty), in place of the game's one flag.
+- **Loot notices** and the **Level Up! button**, as the game's but movable.
+- **The whole interface's size**, in the options' General tab.
+- **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, damage, damage a second and share; the lines under 10% folded into Others (the button by its title), as tall as the lines you set, in the font size you set.
+- **Build list.** Your Damage, Crit and Crit Dmg in its title; your six spell slots, filled or empty, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart.
 - **Jewelry.** The neck, rings and trinkets you wear this run, and what each one gives.
+- **Combat text in Barlow.** The damage you deal and the damage you take, in Barlow Condensed, each at 30 to 100% of its size.
+- **Nameplates** on: V shows or hides the enemies', Shift-V the friends'. The options can show only your target's, or only the bosses', guardians' and elites' (your target's always).
 
-The run frame, build list and jewelry can stay over the game's level-up and jewelry cards, so you see them while you choose. Every piece can be turned on or off from the minimap menu.
+The run tracker, build list, jewelry and damage meter stand one under the other in a column under the minimap, all of the same width, made to fit the screen: the damage meter shows the lines that fit above its bottom edge. Move one and it stands on its own. The build list, jewelry and damage meter are panels of the same make: a dark ground, its border, its title in gold over a gold rule.
+
+The run tracker, boss bars and damage meter stand in for the game's own clock with its kills and gold line, boss bars and meter. The game's row of spells and jewelry under the chat can be put away. Each comes back when you turn the addon's piece off or remove the addon.
+
+As it first opens, the same for everyone: the column under the minimap, the action bar at 85% in the bottom middle, the talent cooldowns and the summons side by side over it, the Level Up! button above them, the boss bars at the top middle, the tooltip just left of the column, the tooltip's border on every panel, seven lines in the damage meter, and the combat text at 40% (the damage you deal) and 30% (the damage you take).
+
+The interface is as tall in its own units at any resolution, so this layout looks the same at 1080p, 1440p or 4K. A wider or narrower screen only gives more or less room between the pieces held by the sides and the ones in the middle.
+
+The border is yours to choose: grey and gold, gold, or the tooltip's. The run tracker, build list, jewelry and damage meter can stay over the game's level-up and jewelry cards, so you see them while you choose.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![A Heroic II run in Gurubashi Arena](screenshots/4-heroic-run.webp) | ![The options](screenshots/2-options.webp) |
+| A Heroic II run: the run tracker with its bosses and guardians, the build list, the jewelry and the damage meter under the minimap; the boss bars at the top; the summons and talent cooldowns over the action bar. | The options, a tab for each piece. |
+| ![Move frames](screenshots/3-move-frames.webp) | ![In an endless run](screenshots/1-endless.webp) |
+| Move frames: a green box for every piece, the grid and its middle lines. | An endless run: the next boss counting down in the purple bar. |
+
+## Install
+
+1. Download `SurvivorUIClassic-X.Y.Z.zip` from the [latest release](https://github.com/morderous/survivorui-classic/releases/latest).
+2. Unzip it into the game's addon folder, `benilla-config\AddOns\`. You should end up with `AddOns\SurvivorUIClassic`.
+3. Restart the game.
+
+Or with the [Survivor UI launcher](https://github.com/morderous/survivor-ui#with-the-launcher-easiest): SurvivorUI Classic is in its **Addons** tab.
+
+To remove it, delete its folder: the game's own screens come back as they were.
 
 ## Survivor UI and SurvivorUI Classic
 
-They change the same frames, so only one of them runs. If both are installed, a panel asks which one you want. To switch later, use the minimap menu or `/suic`, then close the game and open it again. Survivor UI 3.0.44 or newer steps aside by itself when SurvivorUI Classic is chosen.
+SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you need only one of them installed. They change the same frames, so when both are installed only one of them runs: a panel asks which one you want. To switch later, use the options' General tab or `/suic`, then close the game and open it again. Survivor UI 3.0.44 or newer steps aside by itself when SurvivorUI Classic is chosen; with an older one, the panel asks you to update it, or to keep Survivor UI.
 
 ## Commands
 
-- `/suic`: help, or the choice panel while Survivor UI is in use.
-- `/suic move`: move frames.
+- `/suic`: the options, or the choice panel while Survivor UI is in use.
+- `/suic move`: Move frames.
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
 
-### 0.1.0 (unreleased)
+### 0.2.0, 2026-10-29
+- **Options:** a window in the game's look, with a tab for each piece: its size, what it shows, and Reset. Tabs: General, Action bar, Unit frames, Minimap, Run tracker, Boss bars, Build list, Jewelry and Damage meter.
+- **Run tracker:** replaces the run frame, after a Mythic+ timer, with the bosses' checklist and the guardians, elites, kills, gold and next cache. The game's kills and gold line is put away.
+- **A column under the minimap:** the run tracker, build list, jewelry and damage meter, one under the other, all 230 wide, made to fit the screen.
+- **One look:** every piece a panel with a dark ground, a border and a gold title over a gold rule.
+- **Boss bars:** the game's own look, moved and targeted; the lair guardians and elites too.
+- **Damage meter:** flat bars with room between them.
+- **Damage meter:** new, in place of the game's.
+- **Combat text:** the damage you deal and the damage you take in Barlow, each at 30 to 100% (the options' Combat text tab); the damage you deal from the next time the game opens (the game reads its font once, as it loads). With Survivor UI standing aside, the game's numbers are turned back on (Survivor UI turns them off for its own).
+- **Cooldown numbers:** on the action buttons, down to 0.1 second, the last two seconds in red.
+- **The game's screens given back:** the game saves its settings a second after each change, and closing it, what was put away stays away. So the screens put away are kept in the addon's settings: with Survivor UI chosen in its place, they come back as the game starts. With Survivor UI standing aside, the game's screens the addon has none of its own for (the Level Up! button, the loot notices, the minimap's flag, the revive bar, the banners) come back too.
+- **Jewelry:** what each piece gives in a smaller font.
+- **Run tracker:** Elites/Guardians Slain; the guardians' lairs, their state in color and each empty one's seconds to fill again; a thicker run's bar.
+- **Damage meter:** bigger texts on taller bars.
+- **Interface size:** a slider for the whole interface, in General, at 80% for everyone.
+- **Move frames:** a grid, and snapping to it, to the screen's edges and middle and to the other pieces. Places are kept from the screen's nearest point (an older version's are kept again so as they first open, the action bar back in the middle).
+- **Jewelry:** what a piece gives just under its name.
+- **Run tracker in endless mode:** the run's bar counts down to the next boss, "Next boss 4:50" in it; the list is the bosses slain alone; the clock in purple.
+- **Boss bars:** every boss, and at most four guardians and elites.
+- **Damage meter:** Others (the small lines folded, a button and an option, as Survivor UI's), (neck) on a neck's own damage, as tall as the lines set.
+- **Cooldown numbers:** a quarter bigger and brighter.
+- **New:** the summons and totems, the talent cooldowns, the caches and lairs on the minimap, the loot notices, a movable Level Up! button.
+- **Build list:** Damage, Crit and Crit Dmg in its title; each spell's biggest crit this run (read off the combat log); ranks as R1.
+- **Damage meter:** every source's icon (pets, weapons, talents, items), as Survivor UI's.
+- **Cooldown numbers:** yellow, red at the end.
+- **Health text:** smaller, and smaller still until it fits inside the bar.
+- **Tooltip:** movable, with Move frames.
+- **The game's row of spells and jewelry** under the chat can be put away (on by default).
+- **Panels:** one border for all of them: grey and gold, gold, or the tooltip's.
+- **Minimap button:** left-click for the options, right-click for Move frames.
+- **First layout:** the one above, for everyone: the action bar at 85%, the tooltip left of the column, the tooltip's border, seven meter lines, combat text at 40% and 30%. Reset puts a piece back there.
+- **Nameplates:** on with this interface; V for the enemies', Shift-V for the friends' (the game's Level Up! key goes back to Y), and a Nameplates tab: only your target's, or only the bosses', guardians' and elites'.
+- **Damage meter:** a DPS page; a font size, 8 to 14; the numbers in three columns, centered.
+- **Run tracker:** the run's affixes from Heroic III; each lair's line under the guardians, Up, its health in a fight, or its seconds to fill again.
+- **Build list:** a column for each number, centered, with faint lines between; long names cut ("Demonic Emp.").
+- **Jewelry:** each name on one line, a class amulet's by its spell alone.
+- **Minimap:** the caches as loot bags, the lairs as skulls; an empty lair's skull faint with a green check.
+- **Talent cooldowns and summons:** side by side over the action bar, the talents' at its left, the summons' at its right, each growing toward the middle.
+
+### 0.1.0, 2026-10-29
 - First version: the choice panel with Survivor UI, Move frames, health text on the player and target frames, the run frame, boss bars, the build list and the jewelry worn.
 
 ## License
 
-GPL-3.0. Some of the logic comes from [Survivor UI](https://github.com/morderous/survivor-ui), by the same author.
+GPL-3.0. Some of the logic comes from [Survivor UI](https://github.com/morderous/survivor-ui), by the same author. The Barlow fonts are under the SIL Open Font License 1.1 (`SurvivorUIClassic/Fonts`).

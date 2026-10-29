@@ -16,7 +16,8 @@ SUIC = {}
 SUIC.VERSION = GetAddOnMetadata and GetAddOnMetadata("SurvivorUIClassic", "Version") or "?"
 SUIC.FLAT = "Interface\\ChatFrame\\ChatFrameBackground"
 
--- The stock tooltip's frame: what every panel of the addon wears.
+-- The stock tooltip's frame: Move frames' boxes wear it (Style.lua has the
+-- panels' borders).
 SUIC.BACKDROP = {
 	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
 	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -25,17 +26,49 @@ SUIC.BACKDROP = {
 }
 
 local DEFAULTS = {
-	pos = {},
+	pos = {},                  -- each moved piece's place (Mover.lua)
+	hid = {},                  -- the game's screens this addon put away (SetGameShown)
+	uiSize = 0.8,              -- the whole interface's size (Mover.lua), for everyone
+	scale = {},                -- each piece's size, 1 its own
+	border = "tooltip",        -- the panels' border (Style.lua)
+	overCards = true,          -- tracker, build list, jewelry and meter over the cards
+	hideGameRow = true,        -- the game's row of spells and jewelry, under the chat
 	targetHealth = "both",
 	playerHealth = "both",
-	runFrame = true,
+	tracker = true,
+	trackerBosses = true,
+	trackerGuardians = true,
+	trackerElites = true,
+	trackerKills = true,
+	trackerGold = true,
+	trackerCache = true,
 	bossBars = true,
+	bossGuardians = true,
+	bossElites = true,
+	bossMost = 4,               -- guardians and elites at most; the bosses always
+	bossText = "percent",
 	buildList = true,
 	jewelry = true,
-	overCards = true,
+	meter = true,
+	meterLines = 7,
+	meterMode = "damage",
+	meterFold = true,          -- the lines under meterFoldShare% folded into Others
+	meterFoldShare = 10,
+	mapButton = true,          -- the addon's button on the minimap
+	mapPins = true,            -- the caches and the lairs on the minimap (MapPins.lua)
+	lootLog = true,            -- the loot notices (Loot.lua)
+	summons = true,            -- the summons and totems (Summons.lua)
+	talentTimers = true,       -- the talents' clocks (TalentTimers.lua)
+	levelUp = true,            -- the Level Up! button (LevelUp.lua)
+	numberSize = 40,           -- the damage you deal's numbers, in Barlow, 30 to 100%
+	takenSize = 30,            -- the damage you take's, in Barlow too, 30 to 100%
 }
 
+local filled
 function SUIC.DB()
+	if filled and SurvivorUIClassicDB == filled then
+		return filled
+	end
 	SurvivorUIClassicDB = SurvivorUIClassicDB or {}
 	local db = SurvivorUIClassicDB
 	for key, value in pairs(DEFAULTS) do
@@ -47,7 +80,39 @@ function SUIC.DB()
 			end
 		end
 	end
+	-- Settings the builds before 0.2.0 wrote, set once: the gold in the run
+	-- tracker (the game's kills and gold line gone), the run frame no more.
+	if (db.defaults or 0) < 2 then
+		db.trackerGold = true
+		db.runFrame = nil
+		db.defaults = 2
+	end
+	-- The whole interface at 80% for everyone, once.
+	if db.defaults < 3 then
+		db.uiSize = 0.8
+		db.defaults = 3
+	end
+	-- At most four guardians and elites in the boss bars, once.
+	if db.defaults < 4 then
+		db.bossMost = 4
+		db.defaults = 4
+	end
+	-- The summons and the talent clocks back over the action bar.
+	if db.defaults < 5 then
+		db.pos.summons, db.pos.talentTimers = nil, nil
+		db.defaults = 5
+	end
+	-- The talent clocks and the summons side by side over the bar.
+	if db.defaults < 6 then
+		db.pos.summons, db.pos.talentTimers, db.pos.levelup = nil, nil, nil
+		db.defaults = 6
+	end
+	filled = db
 	return db
+end
+
+function SUIC.Default(key)
+	return DEFAULTS[key]
 end
 
 function SUIC.Print(text)
@@ -79,6 +144,19 @@ function SUIC.Start()
 	end
 end
 
+-- This addon the one that will run, known as it loads (before Survivor UI
+-- does): chosen, or Survivor UI away.
+function SUIC.WillRun()
+	local use = SUIC.DB().use
+	if use == "classic" then
+		return true
+	elseif use == "survivorui" then
+		return false
+	end
+	local name, _, _, enabled, loadable = GetAddOnInfo("SurvivorUI")
+	return not (name and enabled and loadable)
+end
+
 -- Survivor UI running, not standing aside.
 function SUIC.OtherOn()
 	return IsAddOnLoaded and IsAddOnLoaded("SurvivorUI") and not SurvivorUI_Standby
@@ -91,12 +169,22 @@ end
 -- switched off here goes back on as the game closes; the next start switches
 -- it off again.
 
-local hidden = {}
+--
+-- The game saves its settings a second after each change, and closing it
+-- the setting given back at the logout is not saved: what is put away stays
+-- away. So the parts put away are kept in this addon's own settings too, and
+-- with Survivor UI chosen in its place, this addon gives them back as it
+-- loads (before Survivor UI puts its own away).
+
+local function Hidden()
+	return SUIC.DB().hid
+end
 
 function SUIC.SetGameShown(part, shown)
 	if not AZS_SetHudShown then
 		return
 	end
+	local hidden = Hidden()
 	if shown then
 		-- Only what this addon put away: the player's own choice stays.
 		if hidden[part] then
@@ -109,14 +197,34 @@ function SUIC.SetGameShown(part, shown)
 	end
 end
 
+local function GiveBack()
+	if AZS_SetHudShown then
+		for part in pairs(Hidden()) do
+			AZS_SetHudShown(part, true)
+		end
+	end
+end
+
+local giver = CreateFrame("Frame")
+giver:RegisterEvent("ADDON_LOADED")
+giver:SetScript("OnEvent", function()
+	if arg1 == "SurvivorUIClassic" then
+		this:UnregisterEvent("ADDON_LOADED")
+		if SUIC.DB().use == "survivorui" then
+			GiveBack()
+			SUIC.DB().hid = {}
+		end
+	end
+end)
+
 ------------------------------------------------------------------------------
--- Numbers as a bar shows them: 950, 12.3k, 4.56M.
+-- Numbers as a bar shows them: 950, 1.6k, 462.6k, 2.36M.
 
 function SUIC.Short(value)
 	value = tonumber(value) or 0
 	if value >= 1000000 then
 		return string.format("%.2fM", value / 1000000)
-	elseif value >= 10000 then
+	elseif value >= 1000 then
 		return string.format("%.1fk", value / 1000)
 	end
 	return tostring(math.floor(value + 0.5))
@@ -142,29 +250,69 @@ function SUIC.InRun()
 	return phase ~= nil and phase ~= "ready"
 end
 
--- Kept over the level-up and jewelry cards (the game's 0.126), as chosen.
-function SUIC.OverCards(frame, wanted)
-	if AZS_SetOnTopOfScreens and frame and frame:GetName() then
-		AZS_SetOnTopOfScreens(frame, wanted and SUIC.DB().overCards and true or false)
+-- Kept over the level-up and jewelry cards (the game's 0.126), as chosen:
+-- the tracker, the build list, the jewelry and the meter, which help to choose.
+local overs = {}
+function SUIC.OverCards(frame)
+	if frame and frame:GetName() then
+		overs[frame:GetName()] = true
+		if AZS_SetOnTopOfScreens then
+			AZS_SetOnTopOfScreens(frame, SUIC.DB().overCards and true or false)
+		end
 	end
 end
+
+function SUIC.RefreshOverCards()
+	if not AZS_SetOnTopOfScreens then
+		return
+	end
+	for name in pairs(overs) do
+		AZS_SetOnTopOfScreens(name, SUIC.DB().overCards and true or false)
+	end
+end
+
+-- The game's row of spells and jewelry under the chat: away while asked.
+function SUIC.RefreshGameRow()
+	SUIC.SetGameShown("build", not SUIC.DB().hideGameRow)
+end
+-- The game's screens this addon has none of its own for: the revive bar,
+-- the banners.
+-- Survivor UI puts some away for its own and, closing, cannot give them back
+-- (the game has saved its settings by then): standing aside for this addon,
+-- they come back.
+local GAME_ONLY = { "revive", "banners" }
+
+SUIC.OnStart(function()
+	SUIC.RefreshGameRow()
+	if SurvivorUI_Standby and AZS_SetHudShown and AZS_IsHudShown and AZS_HUD_CVARS then
+		for index = 1, table.getn(GAME_ONLY) do
+			local part = GAME_ONLY[index]
+			if AZS_HUD_CVARS[part] and not AZS_IsHudShown(part) then
+				AZS_SetHudShown(part, true)
+			end
+		end
+	end
+end)
 
 ------------------------------------------------------------------------------
 -- Who runs: decided once the world is up, when every addon has loaded.
 
 local core = CreateFrame("Frame", "SUICCore")
 core:RegisterEvent("PLAYER_ENTERING_WORLD")
+core:RegisterEvent("PLAYER_LEAVING_WORLD")
 core:RegisterEvent("PLAYER_LOGOUT")
 core:SetScript("OnEvent", function()
-	if event == "PLAYER_LOGOUT" then
-		if AZS_SetHudShown then
-			for part in pairs(hidden) do
-				AZS_SetHudShown(part, true)
-			end
-		end
+	-- The game's screens given back as the world is left, before the game
+	-- saves its settings on the way out (and again at the logout); the pieces
+	-- put them away again when the world comes back.
+	if event == "PLAYER_LEAVING_WORLD" or event == "PLAYER_LOGOUT" then
+		GiveBack()
 		return
 	end
 	if this.decided then
+		if SUIC.active then
+			SUIC.RefreshGameRow()
+		end
 		return
 	end
 	this.decided = true
@@ -194,10 +342,12 @@ SlashCmdList["SURVIVORUICLASSIC"] = function(msg)
 	if not SUIC.active then
 		SUIC.ShowChoice(true)
 	elseif msg == "move" then
-		SUIC.SetMoveMode(true)
+		SUIC.SetMoveMode(not SUIC.MoveMode())
 	elseif msg == "reset" then
 		SUIC.ResetPositions()
+	elseif msg == "help" then
+		SUIC.Print("/suic for the options, /suic move to move frames, /suic reset to put them all back. Version "..SUIC.VERSION..".")
 	else
-		SUIC.Print("/suic move, /suic reset, or the button on the minimap. Version "..SUIC.VERSION..".")
+		SUIC.ToggleOptions()
 	end
 end

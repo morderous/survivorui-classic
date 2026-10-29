@@ -35,8 +35,24 @@ local function MakeText(bar, unitFrame)
 	holder:SetFrameLevel(unitFrame:GetFrameLevel() + 10)
 	local text = holder:CreateFontString(nil, "OVERLAY", "TextStatusBarText")
 	text:SetPoint("CENTER", bar, "CENTER", 0, 0)
+	text.bar = bar
 	text:Hide()
 	return text
+end
+
+-- The text in the bar's font, smaller, and smaller still until it fits
+-- inside the bar whole.
+local function Fit(text, words)
+	local font, _, flags = text:GetFont()
+	local room = text.bar:GetWidth() - 6
+	local size = 10
+	text:SetFont(font, size, flags)
+	text:SetText(words)
+	while size > 7 and text:GetStringWidth() > room do
+		size = size - 1
+		text:SetFont(font, size, flags)
+		text:SetText(words)
+	end
 end
 
 local playerText = MakeText(PlayerFrameHealthBar, PlayerFrame)
@@ -47,7 +63,7 @@ local function UpdatePlayer()
 		return
 	end
 	local style = SUIC.DB().playerHealth
-	playerText:SetText(Text(style, UnitHealth("player"), UnitHealthMax("player")))
+	Fit(playerText, Text(style, UnitHealth("player"), UnitHealthMax("player")))
 	-- The stock numbers, shown on hover, would lie on ours.
 	if PlayerFrameHealthBarText then
 		if style == "off" then
@@ -85,7 +101,7 @@ local function UpdateTarget()
 	if UnitIsDead("target") then
 		hp = 0
 	end
-	targetText:SetText(Text(style, hp, hpm, shareOnly))
+	Fit(targetText, Text(style, hp, hpm, shareOnly))
 	targetText:Show()
 end
 
