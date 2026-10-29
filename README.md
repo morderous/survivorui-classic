@@ -42,7 +42,7 @@ The run tracker, boss bars and damage meter stand in for the game's own clock wi
 
 As it first opens, the same for everyone: the column under the minimap, the action bar at 85% in the bottom middle, the talent cooldowns and the summons side by side over it, the Level Up! button above them, the boss bars at the top middle, the tooltip just left of the column, the tooltip's border on every panel, seven lines in the damage meter, and the combat text at 40% (the damage you deal) and 30% (the damage you take).
 
-The interface is as tall in its own units at any resolution, so this layout looks the same at 1080p, 1440p or 4K. A wider or narrower screen only gives more or less room between the pieces held by the sides and the ones in the middle.
+The interface is as tall in its own units at any resolution, so this layout looks the same at 1080p, 1440p or 4K. A wider or narrower screen only gives more or less room between the pieces held by the sides and the ones in the middle; on a 5:4 screen the chat is a little narrower, to stay clear of the talent cooldowns.
 
 The border is yours to choose: grey and gold, gold, or the tooltip's. The run tracker, build list, jewelry and damage meter can stay over the game's level-up and jewelry cards, so you see them while you choose.
 
@@ -57,11 +57,20 @@ The border is yours to choose: grey and gold, gold, or the tooltip's. The run tr
 
 ## Install
 
+Two ways, the same result: the launcher, or the zip by hand.
+
+### With the launcher (easiest)
+
+1. Download `SurvivorUI-Installer.zip` from the [latest release](https://github.com/morderous/survivorui-classic/releases/latest) and unzip it. It is the [Survivor UI launcher](https://github.com/morderous/survivor-ui#with-the-launcher-easiest), the same in both repositories.
+2. Open `SurvivorInstaller.exe`. Windows may say it protected your PC, since the program is new and not signed: click **More info**, then **Run anyway**.
+3. The launcher finds the game by itself, or click **Find game...** and pick `AzerothSurvivors.exe`.
+4. In the **Addons** tab, pick **SurvivorUI Classic** and click **Install**. When a new version is out, **Update all** takes it.
+
+### By hand
+
 1. Download `SurvivorUIClassic-X.Y.Z.zip` from the [latest release](https://github.com/morderous/survivorui-classic/releases/latest).
 2. Unzip it into the game's addon folder, `benilla-config\AddOns\`. You should end up with `AddOns\SurvivorUIClassic`.
 3. Restart the game.
-
-Or with the [Survivor UI launcher](https://github.com/morderous/survivor-ui#with-the-launcher-easiest): SurvivorUI Classic is in its **Addons** tab.
 
 To remove it, delete its folder: the game's own screens come back as they were.
 
@@ -76,6 +85,10 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.1, 2026-10-29
+- **The chat clear of the talent cooldowns on a 5:4 screen** (1280x1024): there the chat's long lines reached under the talents' row at the action bar's left end, so the chat is made narrower to end before the bar's art. On 4:3 and wider nothing changes, and the chat gets its own width back on a wider screen and as the game closes, so it is never saved narrowed. A chat moved in Move frames is left as it is.
+- **The launcher in every release**: `SurvivorUI-Installer.zip`, the Survivor UI launcher, which installs and updates SurvivorUI Classic from its Addons tab.
 
 ### 0.2.0, 2026-10-29
 - **Options:** a window in the game's look, with a tab for each piece: its size, what it shows, and Reset. Tabs: General, Action bar, Unit frames, Minimap, Run tracker, Boss bars, Build list, Jewelry and Damage meter.
