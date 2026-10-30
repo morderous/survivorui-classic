@@ -271,6 +271,32 @@ function SUIC.RefreshOverCards()
 	end
 end
 
+-- While the cards are up, what stands under them goes: the game can draw a
+-- piece's art over the veil where a piece over it has the same (a button's
+-- icon through a card, as the build list's; seen with Survivor UI). What it
+-- was comes back with them.
+local UNDER_CARDS = { "MainMenuBar", "SUICSummons", "SUICTalentTimers" }
+local cardsUp = false
+local underWatch = CreateFrame("Frame")
+underWatch:Hide()
+underWatch:SetScript("OnUpdate", function()
+	local up = (AZS_GetPhase and AZS_GetPhase() == "choosing" and SUIC.DB().overCards) and true or false
+	if up == cardsUp then
+		return
+	end
+	cardsUp = up
+	for index = 1, table.getn(UNDER_CARDS) do
+		local frame = getglobal(UNDER_CARDS[index])
+		if frame and up then
+			frame.suicAlpha = frame:GetAlpha()
+			frame:SetAlpha(0)
+		elseif frame and frame.suicAlpha then
+			frame:SetAlpha(frame.suicAlpha)
+			frame.suicAlpha = nil
+		end
+	end
+end)
+
 -- The game's row of spells and jewelry under the chat: away while asked.
 function SUIC.RefreshGameRow()
 	SUIC.SetGameShown("build", not SUIC.DB().hideGameRow)
@@ -283,6 +309,7 @@ end
 local GAME_ONLY = { "revive", "banners" }
 
 SUIC.OnStart(function()
+	underWatch:Show()
 	SUIC.RefreshGameRow()
 	if SurvivorUI_Standby and AZS_SetHudShown and AZS_IsHudShown and AZS_HUD_CVARS then
 		for index = 1, table.getn(GAME_ONLY) do
@@ -317,6 +344,8 @@ core:SetScript("OnEvent", function()
 	end
 	this.decided = true
 	local db = SUIC.DB()
+	-- The launcher has read it: this start is the one it was for.
+	db.restartAt = nil
 	if not SUIC.OtherOn() then
 		-- Survivor UI standing aside for this one, or away: back, it asks again.
 		if IsAddOnLoaded and IsAddOnLoaded("SurvivorUI") then

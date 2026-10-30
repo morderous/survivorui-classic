@@ -3,7 +3,7 @@
 -- dialog frame, the tabs down its left as a quest log's titles, and the
 -- game's checkboxes, sliders and radio buttons. A tab for each piece: its
 -- size (it grows from where it stands), what it shows, and Reset. Opened from
--- the minimap button, or /suic; Escape closes it.
+-- the minimap button, or /suic; Escape closes it. Change UI under the tabs.
 
 local DIALOG = {
 	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -297,14 +297,6 @@ PAGES[1] = { "General", "The whole interface's size, the look of every panel, an
 	Button(page, "Reset everything", 130, function() SUIC.ResetEverything() end, 272)
 	page.y = page.y - 26
 	Note(page, "Move frames has a box for every piece, the tooltip's too. Each tab sets its piece's size.")
-	if IsAddOnLoaded("SurvivorUI") then
-		page.y = page.y - 4
-		Button(page, "Switch to Survivor UI", 170, function()
-			window:Hide()
-			SUIC.ShowChoice(true)
-		end)
-		page.y = page.y - 26
-	end
 end }
 
 PAGES[2] = { "Action bar", "The game's action bar, its experience bar on top.", function(page)
@@ -530,6 +522,29 @@ for index = 1, table.getn(PAGES) do
 		Select(this.index)
 	end)
 	tabs[index] = tab
+end
+
+-- Change UI, under the tabs, so it is there on every one: straight to the
+-- panel that picks this addon or Survivor UI (Choice.lua), with Survivor UI
+-- installed.
+local _, _, _, _, _, otherReason = GetAddOnInfo("SurvivorUI")
+if otherReason ~= "MISSING" then
+	local change = CreateFrame("Button", "SUICChangeUI", window, "UIPanelButtonTemplate")
+	change:SetWidth(LEFT - 34)
+	change:SetHeight(22)
+	change:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", 18, 18)
+	change:SetText("Change UI")
+	change:SetScript("OnClick", function()
+		window:Hide()
+		SUIC.ShowChoice(true)
+	end)
+	change:SetScript("OnEnter", function()
+		GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+		GameTooltip:SetText("Change UI")
+		GameTooltip:AddLine("Pick SurvivorUI Classic or Survivor UI. The other one runs from the next time the game starts.", 1, 1, 1, 1)
+		GameTooltip:Show()
+	end)
+	change:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
 -- A tab by its number (the tests' driver opens each one).

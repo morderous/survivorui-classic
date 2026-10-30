@@ -3,7 +3,7 @@
 ## Author: morderous
 ## X-License: GPL-3.0
 ## X-Website: https://github.com/morderous/survivorui-classic
-## Version: 0.2.2
+## Version: 0.2.3
 ## Notes: The game's own interface for Azeroth Survivors, with everything movable and sized, enemy health numbers, a run tracker, boss bars, a damage meter, a build list and the jewelry worn.
 ## SavedVariables: SurvivorUIClassicDB
 Core.lua

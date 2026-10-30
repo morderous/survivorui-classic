@@ -30,7 +30,7 @@ What it gives:
 - **Caches and lairs on the minimap**: loot bags for every cache, a skull for every guardian's lair (beating while it fights, faint with a green check while empty), in place of the game's one flag.
 - **Loot notices** and the **Level Up! button**, as the game's but movable.
 - **The whole interface's size**, in the options' General tab.
-- **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, damage, damage a second and share; the lines under 10% folded into Others (the button by its title), as tall as the lines you set, in the font size you set.
+- **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, damage, damage a second and share; the lines under 10% folded into Others (the button by its title), Reset to count Damage Done and DPS from now on (the arrow beside it), as tall as the lines you set, in the font size you set.
 - **Build list.** Your Damage, Crit and Crit Dmg in its title; your six spell slots, filled or empty, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart.
 - **Jewelry.** The neck, rings and trinkets you wear this run, and what each one gives.
 - **Combat text in Barlow.** The damage you deal and the damage you take, in Barlow Condensed, each at 30 to 100% of its size.
@@ -76,7 +76,7 @@ To remove it, delete its folder: the game's own screens come back as they were.
 
 ## Survivor UI and SurvivorUI Classic
 
-SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you need only one of them installed. They change the same frames, so when both are installed only one of them runs: a panel asks which one you want. To switch later, use the options' General tab or `/suic`, then close the game and open it again. Survivor UI 3.0.44 or newer steps aside by itself when SurvivorUI Classic is chosen; with an older one, the panel asks you to update it, or to keep Survivor UI.
+SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you need only one of them installed. They change the same frames, so when both are installed only one of them runs: a panel asks which one you want. To switch later, use **Change UI**, the button under the options' tabs (or `/suic` while Survivor UI is in use), then close the game and open it again. Survivor UI 3.0.44 or newer steps aside by itself when SurvivorUI Classic is chosen; with an older one, the panel asks you to update it, or to keep Survivor UI.
 
 ## Commands
 
@@ -85,6 +85,14 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.3, 2026-10-30
+
+- **Restart game:** with the Survivor UI launcher open (1.7.1 or newer), Quit game in the Change UI panel becomes Restart game: the game closes and the launcher opens it again by itself. Without the launcher it stays Quit game.
+- **Nothing through the level's cards:** the action bar, the summons and the talent cooldowns fade while the cards are up, as the game could draw an icon of theirs over a card (seen with Survivor UI).
+- **Change UI:** a button under the options' tabs, there on every tab, in place of Switch to Survivor UI on the General tab, opens the panel that picks the interface. With Survivor UI turned off in the game's Options, AddOns tab the button still shows, and the panel says where to turn it on.
+- **The chat's place through a change of interface:** the game keeps one place and size for the chat, so Survivor UI's stayed on after coming back. SurvivorUI Classic now keeps its own and puts them back as it starts; with none kept yet and the chat where Survivor UI left it, the chat goes back to the game's first place.
+- **Reset on the damage meter:** the arrow beside the fold button starts Damage Done and DPS over from that moment, each spell's damage, damage a second and share counted from there, as Survivor UI's Reset. The Healing, Boss Damage and Party pages stay the game's. A new run starts the meter over by itself.
 
 ### 0.2.2, 2026-10-29
 

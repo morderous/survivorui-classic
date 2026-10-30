@@ -3,7 +3,11 @@
 -- the two to use. It stays until one is picked: the two change the same
 -- frames, so they never run together. Picking the one already running closes
 -- it; picking the other one asks for the game to be closed and opened again,
--- as the game loads its addons only at its start.
+-- as the game loads its addons only at its start: with the launcher open (its
+-- mark, a SurvivorUILauncher addon that is only a .toc) Restart game, the
+-- moment kept in restartAt, and the launcher opens the game again. With
+-- Survivor UI the one running, its own box (its ChangeUI.lua) takes this
+-- panel's place.
 
 local DIALOG = {
 	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -33,7 +37,7 @@ shade:SetAllPoints(veil)
 local panel = CreateFrame("Frame", "SUICChoicePanel", veil)
 panel:SetWidth(470)
 panel:SetHeight(250)
-panel:SetPoint("CENTER", UIParent, "CENTER", 0, 60)
+panel:SetPoint("CENTER", UIParent, "CENTER", 0, -30)
 panel:SetBackdrop(DIALOG)
 panel:EnableMouse(true)
 -- The dialog's own background lets the fight show through: darker, to read.
@@ -87,9 +91,18 @@ for index = 1, 2 do
 	picks[index] = button
 end
 
+-- The launcher is there to open the game again.
+local function LauncherHere()
+	local _, _, _, _, _, reason = GetAddOnInfo("SurvivorUILauncher")
+	return reason ~= "MISSING"
+end
+
 local quit = Button("Quit game", 150)
 quit:SetPoint("BOTTOM", panel, "BOTTOM", -80, 16)
 quit:SetScript("OnClick", function()
+	if LauncherHere() then
+		SUIC.DB().restartAt = time()
+	end
 	if Quit then
 		Quit()
 	end
@@ -126,7 +139,13 @@ end
 -- The pick made, the other one still up: the game has to start again.
 function SUIC.ShowRestart()
 	local use = SUIC.DB().use
-	text:SetText(NameOf(use).." runs from the next time the game starts. Close the game and open it again. Until then, "..NameOf(Running()).." stays on.")
+	if LauncherHere() then
+		text:SetText(NameOf(use).." runs from the next time the game starts. The game will close and the launcher will open it again by itself.")
+		quit:SetText("Restart game")
+	else
+		text:SetText(NameOf(use).." runs from the next time the game starts. Close the game and open it again. Until then, "..NameOf(Running()).." stays on.")
+		quit:SetText("Quit game")
+	end
 	note:SetText("")
 	footer:SetText("")
 	for index = 1, 2 do
@@ -161,12 +180,21 @@ end
 function SUIC.ShowChoice(closable)
 	local db = SUIC.DB()
 	text:SetText("Survivor UI and SurvivorUI Classic are both installed. They change the same frames, so only one of them can run. Which one do you want to use?")
-	if db.use == "classic" and not SUIC.active and not SurvivorUI_CanStandBy then
-		note:SetText("This Survivor UI is too old to step aside. Update it from the launcher, or pick it here.")
+	-- Off in the game's list it cannot be picked: an addon can only turn it
+	-- on for the hero played, and each hero would have its own list.
+	local _, _, _, enabled = GetAddOnInfo("SurvivorUI")
+	if not enabled then
+		note:SetText("Survivor UI is off in the game's Options, AddOns tab. Turn it on there and start the game again.")
+		picks[1]:Disable()
 	else
-		note:SetText("")
+		picks[1]:Enable()
+		if db.use == "classic" and not SUIC.active and not SurvivorUI_CanStandBy then
+			note:SetText("This Survivor UI is too old to step aside. Update it from the launcher, or pick it here.")
+		else
+			note:SetText("")
+		end
 	end
-	footer:SetText("You can change it later: /suic, or the button on the minimap.")
+	footer:SetText("You can change it later: Change UI, in the options.")
 	for index = 1, 2 do
 		picks[index]:Show()
 		picks[index].about:Show()

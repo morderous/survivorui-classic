@@ -4,6 +4,8 @@
 -- damage, its damage a second and its share. Its title picks the page:
 -- Damage Done, Healing, the last boss fight's damage, or the party's heroes.
 -- Hover a line for its numbers. It grows with its lines, up to the most set.
+-- The arrow beside the title, Reset, starts Damage Done and DPS over from
+-- that moment; a new run starts them over by itself.
 --
 -- It stands in for the game's meter, which is put away while it is on and
 -- given back as the game closes. From the game's addon API (AZS_GetMeter,
@@ -78,6 +80,27 @@ local function PaintFold()
 	fold:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
 end
 PaintFold()
+
+-- Reset, beside the fold button: the character pane's turning arrow, cut to
+-- its framed square to stand as tall as the + beside it. On the Damage Done
+-- and DPS pages; the others are the game's as they come.
+local reset = CreateFrame("Button", "SUICMeterReset", panel)
+reset:SetWidth(14)
+reset:SetHeight(14)
+reset:SetPoint("LEFT", fold, "RIGHT", 2, 0)
+reset:SetNormalTexture("Interface\\Buttons\\UI-RotationLeft-Button-Up")
+reset:SetPushedTexture("Interface\\Buttons\\UI-RotationLeft-Button-Down")
+reset:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
+reset:GetNormalTexture():SetTexCoord(0.09375, 0.90625, 0.09375, 0.875)
+reset:GetPushedTexture():SetTexCoord(0.09375, 0.90625, 0.09375, 0.875)
+reset:SetScript("OnEnter", function()
+	GameTooltip:SetOwner(this, "ANCHOR_TOP")
+	GameTooltip:SetText("Reset")
+	GameTooltip:AddLine("Damage Done and DPS count from now on.", 1, 1, 1, 1)
+	GameTooltip:AddLine("A new run starts them over by itself.", 0.7, 0.7, 0.7, 1)
+	GameTooltip:Show()
+end)
+reset:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 ------------------------------------------------------------------------------
 -- Icons and colors.
@@ -224,9 +247,53 @@ local function NowRate(total)
 	return (total - recent[1].total) / span
 end
 
+-- Reset: the game's numbers cover the whole run, so the meter keeps what each
+-- spell stood at when Reset was pressed, and shows what came after (Survivor
+-- UI's). Kept with the run it was pressed in.
+local base = nil                -- { run = AZS_ZONE_UPDATED, at = run second, sources = { [name] = damage } }
+
+local function TakeBase()
+	local data = AZS_GetMeter and AZS_GetMeter() or {}
+	base = { run = AZS_ZONE_UPDATED, at = AZS_GetRunTime and AZS_GetRunTime() or 0, sources = {} }
+	for index = 1, table.getn(data) do
+		base.sources[data[index].name or "?"] = tonumber(data[index].dmg) or 0
+	end
+end
+
+-- The game's lines, or what came after Reset: each spell's damage less what
+-- it had then, the most first, its share and damage a second from there.
+local function SinceReset()
+	local data, total, rate = AZS_GetMeter()
+	if base and base.run ~= AZS_ZONE_UPDATED then
+		base = nil
+	end
+	if not base then
+		return data, total, rate
+	end
+	local span = (AZS_GetRunTime and AZS_GetRunTime() or 0) - base.at
+	local shown, sum = {}, 0
+	for index = 1, table.getn(data or {}) do
+		local entry = data[index]
+		local dmg = (tonumber(entry.dmg) or 0) - (base.sources[entry.name or "?"] or 0)
+		if dmg > 0 then
+			table.insert(shown, { name = entry.name, dmg = dmg, dps = span > 0 and dmg / span or 0, proc = entry.proc })
+			sum = sum + dmg
+		end
+	end
+	table.sort(shown, function(a, b) return a.dmg > b.dmg end)
+	for index = 1, table.getn(shown) do
+		shown[index].share = shown[index].dmg / sum
+	end
+	return shown, sum, span > 0 and sum / span or 0
+end
+
+reset:SetScript("OnClick", function()
+	TakeBase()
+end)
+
 local function Data(mode)
 	if mode.key == "dps" and AZS_GetMeter then
-		return PerSecond(AZS_GetMeter())
+		return PerSecond(SinceReset())
 	elseif mode.key == "healing" and AZS_GetHealing then
 		return AZS_GetHealing()
 	elseif mode.key == "bosses" and AZS_GetBossMeter then
@@ -234,7 +301,7 @@ local function Data(mode)
 	elseif mode.key == "party" and AZS_GetPartyMeter then
 		return AZS_GetPartyMeter()
 	elseif AZS_GetMeter then
-		return AZS_GetMeter()
+		return SinceReset()
 	end
 	return {}, 0, 0
 end
@@ -362,6 +429,11 @@ end
 local function Draw()
 	PaintFold()
 	local mode = Mode()
+	if mode.key == "damage" or mode.key == "dps" then
+		reset:Show()
+	else
+		reset:Hide()
+	end
 	local data, sum, perSecond = Data(mode)
 	data = data or {}
 	panel.title:SetText(mode.name)
