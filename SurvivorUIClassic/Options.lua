@@ -436,7 +436,8 @@ PAGES[12] = { "Talent cooldowns", "The talents' clocks over the action bar: a se
 	Reset(page, { "talentTimers" })
 end }
 
-local TEXT_PAGE = { "Combat text", "The numbers over the enemies you hit and over your hero, in Barlow: their size.", function(page)
+local TEXT_PAGE = { "Combat text", "The numbers over the enemies you hit and over your hero, in Barlow: on or off, and their size.", function(page)
+	Setting(page, "Show the combat text", "combatText", "ApplyCombatText")
 	Slider(page, "Damage you deal", 30, 100, 10, function() return tonumber(SUIC.DB().numberSize) or SUIC.Default("numberSize") end, function(value)
 		SUIC.DB().numberSize = value
 		SUIC.ApplyNumberFont()

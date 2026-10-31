@@ -33,7 +33,7 @@ What it gives:
 - **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, damage, damage a second and share; the lines under 10% folded into Others (the button by its title), Reset to count Damage Done and DPS from now on (the arrow beside it), as tall as the lines you set, in the font size you set.
 - **Build list.** Your Damage, Crit and Crit Dmg in its title; your six spell slots, filled or empty, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart.
 - **Jewelry.** The neck, rings and trinkets you wear this run, and what each one gives.
-- **Combat text in Barlow.** The damage you deal and the damage you take, in Barlow Condensed, each at 30 to 100% of its size.
+- **Combat text in Barlow.** The damage you deal and the damage you take, in Barlow Condensed, each at 30 to 100% of its size, or turned off altogether.
 - **Nameplates** on: V shows or hides the enemies', Shift-V the friends'. The options can show only your target's, or only the bosses', guardians' and elites' (your target's always).
 
 The run tracker, build list, jewelry and damage meter stand one under the other in a column under the minimap, all of the same width, made to fit the screen: the damage meter shows the lines that fit above its bottom edge. Move one and it stands on its own. The build list, jewelry and damage meter are panels of the same make: a dark ground, its border, its title in gold over a gold rule.
@@ -64,7 +64,8 @@ Two ways, the same result: the launcher, or the zip by hand.
 1. Download `SurvivorUI-Installer.zip` from the [latest release](https://github.com/morderous/survivorui-classic/releases/latest) and unzip it. It is the [Survivor UI launcher](https://github.com/morderous/survivor-ui#with-the-launcher-easiest), the same in both repositories.
 2. Open `SurvivorInstaller.exe`. Windows may say it protected your PC, since the program is new and not signed: click **More info**, then **Run anyway**.
 3. The launcher finds the game by itself, or click **Find game...** and pick `AzerothSurvivors.exe`.
-4. In the **Addons** tab, pick **SurvivorUI Classic** and click **Install**. When a new version is out, **Update all** takes it.
+4. On a PC with no launcher before it, the launcher installs SurvivorUI Classic and Survivor UI by itself once the game is there, and the game asks which of the two to use. If you already have a launcher, in the **Addons** tab pick **SurvivorUI Classic** and click **Install**.
+5. A new version comes by itself once the game is closed, unless you untick **Auto Update when ready** on its row.
 
 ### By hand
 
@@ -85,6 +86,10 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.4, 2026-10-30
+
+- **Combat text off:** Show the combat text, on the options' Combat text tab, turns it all off at once: the numbers and words over the enemies and everything over your hero. It keeps from one game to the next.
 
 ### 0.2.3, 2026-10-30
 

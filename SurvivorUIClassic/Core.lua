@@ -60,6 +60,7 @@ local DEFAULTS = {
 	summons = true,            -- the summons and totems (Summons.lua)
 	talentTimers = true,       -- the talents' clocks (TalentTimers.lua)
 	levelUp = true,            -- the Level Up! button (LevelUp.lua)
+	combatText = true,         -- the game's combat text at all (CombatText.lua)
 	numberSize = 40,           -- the damage you deal's numbers, in Barlow, 30 to 100%
 	takenSize = 30,            -- the damage you take's, in Barlow too, 30 to 100%
 }

@@ -1,6 +1,6 @@
 -- SurvivorUI Classic - Copyright (C) 2026 morderous - GPL-3.0 - github.com/morderous/survivorui-classic
 -- SurvivorUI Classic: the game's combat numbers, in Barlow, each at 30 to 100%
--- of its size (the options' Combat text tab).
+-- of its size, or none of it at all (the options' Combat text tab).
 --
 -- The damage you deal: the numbers the engine draws over the very enemy hit,
 -- at a size of its own (a share of the screen's diagonal), in the face
@@ -11,6 +11,13 @@
 --
 -- The damage you take: the game's floating combat text over your hero, in
 -- Barlow, its sizes (COMBAT_TEXT_HEIGHT and the crits') scaled.
+--
+-- None at all: CombatDamage off stops the numbers and words over the enemies;
+-- it is the game's own setting, which the game saves, so it goes back on as the
+-- world is left, as the game's screens do, with the same limit: closing the
+-- game, that is not saved (Core.lua). The text over your hero stops short of
+-- its strings, every kind of it, whatever the game's options show: none of the
+-- game's settings is touched for it.
 
 local FOLDER = "Interface\\AddOns\\SurvivorUIClassic\\Fonts\\"
 local BARLOW = FOLDER.."BarlowCondensed-SemiBold.ttf"
@@ -57,24 +64,53 @@ function SUIC.GameNumbers()
 	return GetCVar("CombatDamage") ~= "0"
 end
 
+local stockAdd
+
+local function HoldText()
+	if not stockAdd and CombatText_AddMessage then
+		stockAdd = CombatText_AddMessage
+		CombatText_AddMessage = function(message, scroll, r, g, b, kind, staggered)
+			if SUIC.DB().combatText then
+				return stockAdd(message, scroll, r, g, b, kind, staggered)
+			end
+		end
+	end
+end
+
+function SUIC.ApplyCombatText()
+	HoldText()
+	SetCVar("CombatDamage", SUIC.DB().combatText and "1" or "0")
+end
+
 -- The damage font set as this addon loads, the game reading it just after,
 -- when this addon is the one that runs. The combat text's as it starts, and
 -- again whenever the game loads its combat text (which sets its own).
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
+loader:RegisterEvent("PLAYER_ENTERING_WORLD")
+loader:RegisterEvent("PLAYER_LEAVING_WORLD")
+loader:RegisterEvent("PLAYER_LOGOUT")
 loader:SetScript("OnEvent", function()
-	if arg1 == "SurvivorUIClassic" then
+	if event ~= "ADDON_LOADED" then
+		if SUIC.active and not SUIC.DB().combatText then
+			SetCVar("CombatDamage", event == "PLAYER_ENTERING_WORLD" and "0" or "1")
+		end
+	elseif arg1 == "SurvivorUIClassic" then
 		if SUIC.WillRun() then
 			SUIC.ApplyNumberFont()
 		end
 	elseif arg1 == "Blizzard_CombatText" and SUIC.active then
 		SUIC.ApplyTakenSize()
+		HoldText()
 	end
 end)
 
 SUIC.OnStart(function()
-	if SurvivorUI_Standby and not SUIC.GameNumbers() then
+	if not SUIC.DB().combatText then
+		SetCVar("CombatDamage", "0")
+	elseif SurvivorUI_Standby and not SUIC.GameNumbers() then
 		SetCVar("CombatDamage", "1")
 	end
+	HoldText()
 	SUIC.ApplyTakenSize()
 end)
