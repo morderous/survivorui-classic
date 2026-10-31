@@ -110,6 +110,49 @@ function SUIC.Window(name, title, width)
 	return panel
 end
 
+local DIALOG = {
+	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+	tile = true, tileSize = 32, edgeSize = 32,
+	insets = { left = 11, right = 12, top = 12, bottom = 11 },
+}
+
+-- A window of the game's own make: a dialog frame with its title on the
+-- header, its close button, dragged by its body. Escape closes it.
+function SUIC.Dialog(name, title, width, height)
+	local window = CreateFrame("Frame", name, UIParent)
+	window:SetWidth(width)
+	window:SetHeight(height)
+	window:SetPoint("CENTER", UIParent, "CENTER", 0, 30)
+	window:SetFrameStrata("DIALOG")
+	window:SetBackdrop(DIALOG)
+	window:EnableMouse(true)
+	window:SetMovable(true)
+	window:SetClampedToScreen(true)
+	window:RegisterForDrag("LeftButton")
+	window:SetScript("OnDragStart", function() this:StartMoving() end)
+	window:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+	window:Hide()
+	table.insert(UISpecialFrames, name)
+	local inside = window:CreateTexture(nil, "BACKGROUND")
+	inside:SetTexture(SUIC.FLAT)
+	inside:SetVertexColor(0, 0, 0, 0.85)
+	inside:SetPoint("TOPLEFT", window, "TOPLEFT", 11, -12)
+	inside:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -12, 11)
+	window.inside = inside
+	local header = window:CreateTexture(nil, "ARTWORK")
+	header:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
+	header:SetWidth(300)
+	header:SetHeight(64)
+	header:SetPoint("TOP", window, "TOP", 0, 12)
+	local heading = window:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	heading:SetPoint("TOP", header, "TOP", 0, -14)
+	heading:SetText(title)
+	local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
+	close:SetPoint("TOPRIGHT", window, "TOPRIGHT", -6, -6)
+	return window
+end
+
 -- The tooltip's border, thin: the run tracker's bars and the boss bars.
 local THIN = {
 	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",

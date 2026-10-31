@@ -14,6 +14,7 @@ What it gives:
   - While the boxes are up, a grid shows, its middle lines in gold. A box let go snaps to the grid, to the screen's edges and middle, and to the other boxes' edges and middles.
   - A place is kept from the point of the screen nearest the piece, so the layout keeps its shape at any interface size and any resolution: a piece in the middle stays in the middle, one by an edge stays by that edge.
   - The options give each piece its own size, and it grows from where it stands. The whole interface is at 80%, its size a slider in General.
+- **The Guide.** A gold ! on the minimap's rim opens pages that explain the game's numbers simply, with colors, sliders to try and your own hero's numbers: Luck, Damage, Crit, DoTs, the spells that look like DoTs and aren't, and Damage Reduction. Everything in it was read from the game's executable, and more pages are coming.
 - **Health and mana in numbers.** The target frame shows an enemy's real health, `12.3k / 40.0k (31%)`, read from the game, and the mana in the same words. Each frame can show Off, Value, Percent or Both.
 - **Run tracker,** after a Mythic+ timer, in a panel as the others:
   - the zone, with its Heroic level or Endless;
@@ -28,12 +29,12 @@ What it gives:
 - **Summons and totems** as the game's buffs, over the action bar's right end and growing toward its middle: how many are out ("6/30" against a limit) and the time the first goes.
 - **Talent cooldowns** over the action bar's left end, growing toward its middle: a second life's wait (Divine Intervention, Cheat Death), a heal's, a proc's, a summoning talent's next; dark and counting while they wait, glowing gold when ready.
 - **Caches and lairs on the minimap**: loot bags for every cache, a skull for every guardian's lair (beating while it fights, faint with a green check while empty), in place of the game's one flag.
-- **The character page in one panel**, in the look of the others: the item slots at both sides, the hero between them, turned by holding the mouse on it and pulling, at the hero's left the odds your luck gives on the cards and the necks, at the right Damage, Crit and Crit Dmg, each hovered for its formula with your numbers in it, and under the hero the other numbers in four small panels by kind (Bonus, Utility, Defense, Offense), the game's Run Stats box folded in. The hero's name in the class's color. Off in the options' General tab, the game's own page comes back.
+- **The character page in one panel**, in the look of the others: the item slots at both sides, the hero between them, turned by holding the mouse on it and pulling, at the hero's left the odds your luck gives on the cards and the necks, at the right Damage, Crit and Crit Dmg, each hovered for its formula with your numbers in it, and under the hero the other numbers in four small panels by kind (Bonus, Utility, Defense, Offense), the game's Run Stats box folded in. The hero's name in the class's color. The options' Character panel tab picks this page or the game's own, no changes.
 - **Loot notices** and the **Level Up! button**, as the game's but movable, the button with its key on it.
 - **Frames a second** in the screen's bottom left corner, and **a border round the game's clock** under the minimap.
 - **The whole interface's size**, in the options' General tab.
 - **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, its number and share; the lines under 10% folded into Others (the button by its title), Reset to count Damage Done and DPS from now on (the arrow beside it), as tall as the lines you set, in the font size you set.
-- **Build list.** Your Damage, Crit and Crit Dmg in its title; your six spell slots, filled or empty, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart. Hover a biggest crit for that spell's crits and hits this run.
+- **Build list.** Your Damage, Crit and Crit Dmg in its title; your six spell slots, filled or empty, by rank, the highest first, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart. Hover a biggest crit for that spell's crits and hits this run.
 - **Jewelry.** The neck, rings and trinkets you wear this run, and what each one gives.
 - **Combat text in Barlow.** The damage you deal and the damage you take, in Barlow Condensed, each at 30 to 100% of its size, or turned off altogether.
 - **Nameplates** on: V shows or hides the enemies', Shift-V the friends'. The options can show only your target's, or only the bosses', guardians' and elites' (your target's always).
@@ -88,6 +89,23 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.6, 2026-10-31
+
+**Introducing the Guide.** A new button on the minimap opens a window of pages that explain how the game's numbers really work, in plain words, with colors, sliders to try and your own hero's numbers. Every number in it was read from the game's executable (game version 0.131). It's an ongoing project: more pages are coming, and feedback is welcome.
+
+**The Guide**
+- **The button:** on the minimap's rim, in our own art: a gold ! while there is a page to read, a ? once all are read. Hide it on the options' Minimap tab; `/suic guide` opens the Guide too.
+- **Luck:** the bag of marbles, the magic number, and sliders for Luck and level that fill a bag of 100 marbles.
+- **Damage:** the four boxes of a hit, what is added and what multiplies, and where buffs like Battle Shout go, each with its tooltip.
+- **Crit:** why Crit stops at 100%, where the rest goes, and three cards that show which +10 is worth most for your hero right now.
+- **DoTs:** a clear warning that Crit and Crit Dmg do nothing for them, when a DoT's damage is set, how copies grow with your level, and marbles for the ticks.
+- **Not DoTs:** the spells that look like DoTs and aren't, one by one with a tooltip: Consecration, Flamestrike, Blizzard, Rain of Fire, Hurricane, Volley, the traps and Hellfire. They crit, and two on the ground at once both count.
+- **Reduction:** how Damage Reduction works, its 60% cap, the talents that touch the cap, the talents of every class that add to the number, each on its class's color with a tooltip, and a bar to try it on.
+
+**Also new**
+- **Character panel tab** in the options: use the old page, no changes, or ours. It moved here from General, and with the old one chosen the hero no longer turns by dragging.
+- **Build list:** the spells stand by rank, the highest first.
 
 ### 0.2.5, 2026-10-31
 

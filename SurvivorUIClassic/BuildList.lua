@@ -4,9 +4,10 @@
 -- Crit Dmg, as the stats panel reads them) and the slots filled. The run's
 -- six spell slots, filled or not, each spell with its icon, its name as the
 -- game writes it, its biggest crit this run (Crits.lua), its cooldown and its
--- rank; the racial apart at the bottom (it takes no slot). The empty slots
--- show, since how many are left matters at every card. Hover a spell for its
--- tooltip, its biggest crit for its crits and hits this run.
+-- rank, the highest rank first; the racial apart at the bottom (it takes no
+-- slot). The empty slots show, since how many are left matters at every card.
+-- Hover a spell for its tooltip, its biggest crit for its crits and hits this
+-- run.
 --
 -- From the game's addon API (AZS_SPELLS, your racial last): its spells sit on
 -- the action bar in the list's order, the racial on button 12. In a run only.
@@ -265,14 +266,28 @@ local function Numbers()
 	end
 end
 
+-- The highest rank first, equal ranks in the game's order.
+local function ByRank(a, b)
+	local first, second = tonumber(a.entry.rank) or 0, tonumber(b.entry.rank) or 0
+	if first ~= second then
+		return first > second
+	end
+	return a.slot < b.slot
+end
+
 local function Draw()
 	local spells = AZS_SPELLS or {}
 	local total = table.getn(spells)
 	-- The racial is the last one; a hero has one.
 	local slotted = math.max(0, total - 1)
+	local order = {}
+	for index = 1, slotted do
+		table.insert(order, { entry = spells[index], slot = index })
+	end
+	table.sort(order, ByRank)
 	for index = 1, SLOTS do
-		if index <= slotted then
-			Fill(rows[index], spells[index], index, false)
+		if order[index] then
+			Fill(rows[index], order[index].entry, order[index].slot, false)
 		else
 			Empty(rows[index])
 		end

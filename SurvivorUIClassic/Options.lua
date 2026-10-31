@@ -5,48 +5,11 @@
 -- size (it grows from where it stands), what it shows, and Reset. Opened from
 -- the minimap button, or /suic; Escape closes it. Change UI under the tabs.
 
-local DIALOG = {
-	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-	tile = true, tileSize = 32, edgeSize = 32,
-	insets = { left = 11, right = 12, top = 12, bottom = 11 },
-}
 local HIGHLIGHT = "Interface\\QuestFrame\\UI-QuestTitleHighlight"
 local LEFT = 172               -- the pages' left edge, past the tabs
 local PAGE_WIDTH = 400
 
-local window = CreateFrame("Frame", "SUICOptions", UIParent)
-window:SetWidth(600)
-window:SetHeight(500)
-window:SetPoint("CENTER", UIParent, "CENTER", 0, 30)
-window:SetFrameStrata("DIALOG")
-window:SetBackdrop(DIALOG)
-window:EnableMouse(true)
-window:SetMovable(true)
-window:SetClampedToScreen(true)
-window:RegisterForDrag("LeftButton")
-window:SetScript("OnDragStart", function() this:StartMoving() end)
-window:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
-window:Hide()
-table.insert(UISpecialFrames, "SUICOptions")
-
-local inside = window:CreateTexture(nil, "BACKGROUND")
-inside:SetTexture(SUIC.FLAT)
-inside:SetVertexColor(0, 0, 0, 0.85)
-inside:SetPoint("TOPLEFT", window, "TOPLEFT", 11, -12)
-inside:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -12, 11)
-
-local header = window:CreateTexture(nil, "ARTWORK")
-header:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
-header:SetWidth(300)
-header:SetHeight(64)
-header:SetPoint("TOP", window, "TOP", 0, 12)
-local heading = window:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-heading:SetPoint("TOP", header, "TOP", 0, -14)
-heading:SetText("SurvivorUI Classic")
-
-local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
-close:SetPoint("TOPRIGHT", window, "TOPRIGHT", -6, -6)
+local window = SUIC.Dialog("SUICOptions", "SurvivorUI Classic", 600, 500)
 
 local version = window:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 version:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", 20, 18)
@@ -288,8 +251,6 @@ PAGES[1] = { "General", "The whole interface's size, the look of every panel, an
 		"While a level's cards or a new piece of jewelry are up, the run tracker, the build list, the jewelry and the damage meter stay lit over the game's dark veil.")
 	Setting(page, "Hide the game's row of spells and jewelry", "hideGameRow", "RefreshGameRow",
 		"The game's own row of icons under the chat; the build list and the jewelry show the same.")
-	Setting(page, "The character page in one panel", "characterPage", "RefreshCharacterPage",
-		"The hero larger, the item slots at both sides and every number under the hero, the Run Stats too. Off, the game's own page.")
 	Setting(page, "Frames a second", "fps", "RefreshFps", "In the screen's bottom left corner. Move frames takes it elsewhere.")
 	Header(page, "Layout")
 	Button(page, "Move frames", 130, function()
@@ -321,6 +282,8 @@ PAGES[4] = { "Minimap", "The minimap with its zone name and its buttons.", funct
 	Size(page, "Size", "minimap")
 	Setting(page, "The addon's button on the minimap", "mapButton", "RefreshMapButton",
 		"Hidden, the options open with /suic.")
+	Setting(page, "The guide's button on the minimap", "guideButton", "RefreshGuideButton",
+		"How Luck, Damage and Crit really work. A ! when there is something new to read. Hidden, the guide opens with /suic guide.")
 	Setting(page, "Caches and lairs on the minimap", "mapPins", "RefreshMapPins",
 		"A chest for every cache, a red flag for every guardian's lair (faint when empty, beating while it fights), in place of the game's one flag.")
 	Setting(page, "A border round the clock", "clockFrame", "RefreshClock",
@@ -483,6 +446,22 @@ end }
 
 -- The combat text's tab, second, after General.
 table.insert(PAGES, 2, TEXT_PAGE)
+
+local CHARACTER_PAGE = { "Character panel", "The page that opens when you look at your hero.", function(page)
+	Radio(page, "Which one", { { "old", "Use the old one, no changes" }, { "ours", "Our character panel" } }, function()
+		return SUIC.DB().characterPage and "ours" or "old"
+	end, function(value)
+		SUIC.DB().characterPage = value == "ours"
+		SUIC.RefreshCharacterPage()
+	end)
+	Header(page, "The old one")
+	Note(page, "The game's own page, just as it comes.")
+	Header(page, "Ours")
+	Note(page, "One panel with your hero larger, the item slots at both sides, Luck and the main stats with their formulas, and every other number under the hero, the Run Stats too. Hold the mouse on your hero and pull to turn it.")
+end }
+
+-- After the unit frames.
+table.insert(PAGES, 5, CHARACTER_PAGE)
 
 ------------------------------------------------------------------------------
 -- The tabs.

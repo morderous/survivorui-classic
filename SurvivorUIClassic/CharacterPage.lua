@@ -189,6 +189,7 @@ local function Odds(m)
 	end
 	return odds, weights
 end
+SUIC.CardOdds = Odds
 
 local function Note(text, r, g, b)
 	GameTooltip:AddLine(text, r or 1, g or 0.82, b or 0, 1)
@@ -591,12 +592,14 @@ local function BuildLuck()
 	end
 end
 
--- Hold the mouse on the hero and pull to turn it, on this page and the game's
--- (Survivor UI's).
+-- Hold the mouse on the hero and pull to turn it (Survivor UI's), on this page
+-- only: the game's page stays as it comes.
 local function Turnable(model)
 	model:EnableMouse(true)
 	model:SetScript("OnMouseDown", function()
-		this.suicFrom = GetCursorPosition()
+		if SUIC.DB().characterPage then
+			this.suicFrom = GetCursorPosition()
+		end
 	end)
 	model:SetScript("OnMouseUp", function()
 		this.suicFrom = nil

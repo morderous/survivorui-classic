@@ -5,48 +5,57 @@
 
 local RADIUS = 80
 
-local button = CreateFrame("Button", "SUICMinimapButton", Minimap)
-button:SetWidth(31)
-button:SetHeight(31)
-button:SetFrameStrata("MEDIUM")
-button:SetFrameLevel(Minimap:GetFrameLevel() + 8)
-button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-button:RegisterForDrag("LeftButton")
-button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-button:Hide()
+-- A round button on the minimap's rim, its place on the rim saved under key
+-- (angle the first). button.icon is its art, button.border the game's ring
+-- round it, button.Place puts it there.
+function SUIC.RimButton(name, key, angle)
+	local rim = CreateFrame("Button", name, Minimap)
+	rim:SetWidth(31)
+	rim:SetHeight(31)
+	rim:SetFrameStrata("MEDIUM")
+	rim:SetFrameLevel(Minimap:GetFrameLevel() + 8)
+	rim:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+	rim:RegisterForDrag("LeftButton")
+	rim:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+	rim:Hide()
 
-local icon = button:CreateTexture(nil, "BACKGROUND")
-icon:SetTexture("Interface\\Icons\\INV_Misc_Gear_01")
-icon:SetWidth(20)
-icon:SetHeight(20)
-icon:SetPoint("TOPLEFT", button, "TOPLEFT", 7, -5)
-local border = button:CreateTexture(nil, "OVERLAY")
-border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-border:SetWidth(52)
-border:SetHeight(52)
-border:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
+	rim.icon = rim:CreateTexture(nil, "ARTWORK")
+	rim.icon:SetWidth(20)
+	rim.icon:SetHeight(20)
+	rim.icon:SetPoint("TOPLEFT", rim, "TOPLEFT", 7, -5)
+	rim.border = rim:CreateTexture(nil, "OVERLAY")
+	rim.border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+	rim.border:SetWidth(52)
+	rim.border:SetHeight(52)
+	rim.border:SetPoint("TOPLEFT", rim, "TOPLEFT", 0, 0)
 
-local function Place()
-	local angle = math.rad(SUIC.DB().mapAngle or 225)
-	button:ClearAllPoints()
-	button:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * RADIUS, math.sin(angle) * RADIUS)
+	function rim.Place()
+		local at = math.rad(SUIC.DB()[key] or angle)
+		rim:ClearAllPoints()
+		rim:SetPoint("CENTER", Minimap, "CENTER", math.cos(at) * RADIUS, math.sin(at) * RADIUS)
+	end
+
+	-- Round the rim after the cursor while dragged.
+	local function Follow()
+		local x, y = GetCursorPosition()
+		local scale = Minimap:GetEffectiveScale()
+		local cx, cy = Minimap:GetCenter()
+		SUIC.DB()[key] = math.deg(math.atan2(y / scale - cy, x / scale - cx))
+		rim.Place()
+	end
+
+	rim:SetScript("OnDragStart", function()
+		this:SetScript("OnUpdate", Follow)
+	end)
+	rim:SetScript("OnDragStop", function()
+		this:SetScript("OnUpdate", nil)
+	end)
+	return rim
 end
 
--- Round the rim after the cursor while dragged.
-local function Follow()
-	local x, y = GetCursorPosition()
-	local scale = Minimap:GetEffectiveScale()
-	local cx, cy = Minimap:GetCenter()
-	SUIC.DB().mapAngle = math.deg(math.atan2(y / scale - cy, x / scale - cx))
-	Place()
-end
+local button = SUIC.RimButton("SUICMinimapButton", "mapAngle", 225)
+button.icon:SetTexture("Interface\\Icons\\INV_Misc_Gear_01")
 
-button:SetScript("OnDragStart", function()
-	this:SetScript("OnUpdate", Follow)
-end)
-button:SetScript("OnDragStop", function()
-	this:SetScript("OnUpdate", nil)
-end)
 button:SetScript("OnEnter", function()
 	GameTooltip:SetOwner(this, "ANCHOR_LEFT")
 	GameTooltip:SetText("SurvivorUI Classic")
@@ -69,7 +78,7 @@ end)
 
 function SUIC.RefreshMapButton()
 	if SUIC.active and SUIC.DB().mapButton then
-		Place()
+		button.Place()
 		button:Show()
 	else
 		button:Hide()

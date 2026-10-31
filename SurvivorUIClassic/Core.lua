@@ -55,6 +55,8 @@ local DEFAULTS = {
 	meterFold = true,          -- the lines under meterFoldShare% folded into Others
 	meterFoldShare = 10,
 	mapButton = true,          -- the addon's button on the minimap
+	guideButton = true,        -- the guide's button on the minimap (Guide.lua)
+	guideRead = {},            -- the guide's pages read
 	mapPins = true,            -- the caches and the lairs on the minimap (MapPins.lua)
 	clockFrame = true,         -- a border round the game's clock under it (Clock.lua)
 	fps = true,                -- the frames a second, in the screen's corner (Fps.lua)
@@ -399,8 +401,10 @@ SlashCmdList["SURVIVORUICLASSIC"] = function(msg)
 		SUIC.SetMoveMode(not SUIC.MoveMode())
 	elseif msg == "reset" then
 		SUIC.ResetPositions()
+	elseif msg == "guide" then
+		SUIC.ToggleGuide()
 	elseif msg == "help" then
-		SUIC.Print("/suic for the options, /suic move to move frames, /suic reset to put them all back. Version "..SUIC.VERSION..".")
+		SUIC.Print("/suic for the options, /suic move to move frames, /suic guide for the guide, /suic reset to put them all back. Version "..SUIC.VERSION..".")
 	else
 		SUIC.ToggleOptions()
 	end
