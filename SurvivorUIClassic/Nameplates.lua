@@ -30,8 +30,31 @@ function SUIC_ToggleFriendPlates()
 	end
 end
 
+-- The game's Nameplate Layout (its 0.131): nil on a game without it.
+local function Layout()
+	local known, value = pcall(GetCVar, "nameplateLayout")
+	return known and value or nil
+end
+
+function SUIC.RefreshPlateLayout()
+	if Layout() then
+		SetCVar("nameplateLayout", SUIC.DB().plateOverlap and "overlap" or "stack")
+	end
+end
+
 SUIC.OnStart(function()
 	local db = SUIC.DB()
+	-- Overlapping for everyone, once; after that the box follows the game's
+	-- option, which may have changed since.
+	if Layout() then
+		if db.layoutSet then
+			db.plateOverlap = Layout() == "overlap"
+		else
+			db.layoutSet = true
+			db.plateOverlap = true
+			SUIC.RefreshPlateLayout()
+		end
+	end
 	if db.plates then
 		return
 	end
@@ -65,9 +88,28 @@ end)
 -- plate is judged again as the client shows it (its OnShow, the new unit's
 -- name and bar already on it) and every frame after, else one handed on
 -- shows its last unit's look for a moment.
+--
+-- The boss bar under the mouse lines its enemy's plate in white
+-- (SUIC.LightPlate, BossBars.lua), shown whatever the two options leave out.
 
 local scanned, plates = 0, {}
 local important, importantAt = {}, nil
+local lit                       -- the enemy's name to line, or nil
+local line = CreateFrame("Frame", nil, UIParent)
+line:SetBackdrop({
+	edgeFile = "Interface\\ChatFrame\\ChatFrameBackground",
+	tile = false, edgeSize = 1,
+	insets = { left = 0, right = 0, top = 0, bottom = 0 },
+})
+line:SetBackdropBorderColor(1, 1, 1, 1)
+line:Hide()
+
+function SUIC.LightPlate(name)
+	lit = name
+	if not name then
+		line:Hide()
+	end
+end
 
 local function IsPlate(frame)
 	local region = frame:GetRegions()
@@ -132,9 +174,29 @@ local function Filter(plate, db, target, names)
 		return
 	end
 	local isTarget = target and plate:GetAlpha() == 1
-	local name = onlyImportant and plate.suicName and plate.suicName:GetText()
-	local shown = isTarget or (name and names[name])
+	local name = (onlyImportant or lit) and plate.suicName and plate.suicName:GetText()
+	local shown = isTarget or (name and (name == lit or (onlyImportant and names[name])))
 	Clear(plate, shown and 1 or 0)
+end
+
+-- The line round the first plate of that name.
+local function KeepLine()
+	for index = 1, table.getn(plates) do
+		local plate = plates[index]
+		if plate:IsVisible() and plate.suicName and plate.suicName:GetText() == lit then
+			local bar = plate.suicBar
+			if line:GetParent() ~= bar then
+				line:SetParent(bar)
+				line:ClearAllPoints()
+				line:SetPoint("TOPLEFT", bar, "TOPLEFT", -2, 2)
+				line:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 2, -2)
+				line:SetFrameLevel(bar:GetFrameLevel() + 3)
+			end
+			line:Show()
+			return
+		end
+	end
+	line:Hide()
 end
 
 local function OnShown()
@@ -175,6 +237,9 @@ scanner:SetScript("OnUpdate", function()
 		if plates[index]:IsVisible() then
 			Filter(plates[index], db, target, names)
 		end
+	end
+	if lit then
+		KeepLine()
 	end
 end)
 scanner:Hide()

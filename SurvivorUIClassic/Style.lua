@@ -49,6 +49,12 @@ local function Paint(frame)
 	end
 end
 
+-- Any frame in the panels' ground and border, repainted with them.
+function SUIC.Framed(frame)
+	table.insert(panels, frame)
+	Paint(frame)
+end
+
 function SUIC.RepaintPanels()
 	for index = 1, table.getn(panels) do
 		Paint(panels[index])

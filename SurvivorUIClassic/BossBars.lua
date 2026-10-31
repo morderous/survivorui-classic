@@ -3,10 +3,12 @@
 -- of the screen in the middle: the name in red over a long thin red bar in a
 -- black line. Two things more than the game's: they move (Move frames), and
 -- a click targets the enemy (the one targeted is framed in gold; hover for
--- its health in numbers). Every boss alive, the final boss first, then the
--- lair guardians awake or hurt (named in blue) and the elites (in gold), as
--- chosen, four of them at most (the bosses always); an enraged boss's name in
--- orange.
+-- its health in numbers). The bar under the mouse goes white and lines its
+-- enemy's plate in white, to tell which one it is; a bar goes white too with
+-- the mouse on its enemy out in the world. Every boss alive, the final boss
+-- first, then the lair guardians awake or hurt (named in blue) and the elites
+-- (in gold), as chosen, four of them at most (the bosses always); an enraged
+-- boss's name in orange.
 --
 -- They stand in for the game's boss bars, which are put away while these are
 -- on and given back as the game closes. From the game's addon API (AZS_UNITS).
@@ -39,11 +41,16 @@ local function Home(f)
 end
 Home(holder)
 
+local hovered                   -- the bar under the mouse
+
 local function EntryEnter()
 	local unit = this.unit
 	if not unit then
 		return
 	end
+	hovered = this
+	this.edge:SetBackdropBorderColor(1, 1, 1, 1)
+	SUIC.LightPlate(unit.name)
 	GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
 	GameTooltip:SetText(unit.name or "?")
 	GameTooltip:AddLine(KIND_NAMES[unit.kind] or "", 1, 0.82, 0)
@@ -57,6 +64,12 @@ local function EntryEnter()
 	end
 	GameTooltip:AddLine("Click to target it.", 0.7, 0.7, 0.7)
 	GameTooltip:Show()
+end
+
+local function EntryLeave()
+	hovered = nil
+	SUIC.LightPlate(nil)
+	GameTooltip:Hide()
 end
 
 local function EntryClick()
@@ -74,7 +87,7 @@ for index = 1, MOST do
 	entry:RegisterForClicks("LeftButtonUp")
 	entry:SetScript("OnClick", EntryClick)
 	entry:SetScript("OnEnter", EntryEnter)
-	entry:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	entry:SetScript("OnLeave", EntryLeave)
 	entry.name = SUIC.Text(entry, "GameFontNormal")
 	entry.name:SetPoint("TOP", entry, "TOP", 0, 0)
 	local bar = CreateFrame("StatusBar", nil, entry)
@@ -129,7 +142,7 @@ local function Picked(db)
 	return picked
 end
 
-local function Fill(entry, unit, target)
+local function Fill(entry, unit, target, mouse)
 	entry.unit = unit
 	entry.bar:SetValue((tonumber(unit.hp) or 0) / tonumber(unit.hpm))
 	entry.name:SetText(unit.name or "?")
@@ -138,7 +151,12 @@ local function Fill(entry, unit, target)
 		color = { 1, 0.55, 0.15 }
 	end
 	entry.name:SetTextColor(color[1], color[2], color[3])
-	if target and target == unit.name then
+	if entry == hovered then
+		SUIC.LightPlate(unit.name)
+	end
+	if entry == hovered or (mouse and mouse == unit.name) then
+		entry.edge:SetBackdropBorderColor(1, 1, 1, 1)
+	elseif target and target == unit.name then
 		entry.edge:SetBackdropBorderColor(1, 0.82, 0, 1)
 	else
 		entry.edge:SetBackdropBorderColor(0, 0, 0, 1)
@@ -151,6 +169,7 @@ local function Draw()
 	local picked = SUIC.InRun() and Picked(db) or {}
 	local others = tonumber(db.bossMost) or 4
 	local target = UnitExists("target") and UnitName("target")
+	local mouse = not hovered and UnitExists("mouseover") and UnitName("mouseover")
 	local shown, extra = 0, 0
 	for index = 1, table.getn(picked) do
 		local unit = picked[index]
@@ -160,10 +179,14 @@ local function Draw()
 		end
 		if shown < MOST and (boss or extra <= others) then
 			shown = shown + 1
-			Fill(entries[shown], unit, target)
+			Fill(entries[shown], unit, target, mouse)
 		end
 	end
 	for index = shown + 1, MOST do
+		if entries[index] == hovered then
+			hovered = nil
+			SUIC.LightPlate(nil)
+		end
 		entries[index].unit = nil
 		entries[index]:Hide()
 	end
@@ -174,7 +197,7 @@ local elapsed = 0
 local ticker = CreateFrame("Frame")
 ticker:SetScript("OnUpdate", function()
 	elapsed = elapsed + arg1
-	if elapsed < 0.2 then
+	if elapsed < 0.1 then
 		return
 	end
 	elapsed = 0

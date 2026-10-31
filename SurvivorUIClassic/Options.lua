@@ -288,6 +288,9 @@ PAGES[1] = { "General", "The whole interface's size, the look of every panel, an
 		"While a level's cards or a new piece of jewelry are up, the run tracker, the build list, the jewelry and the damage meter stay lit over the game's dark veil.")
 	Setting(page, "Hide the game's row of spells and jewelry", "hideGameRow", "RefreshGameRow",
 		"The game's own row of icons under the chat; the build list and the jewelry show the same.")
+	Setting(page, "The character page in one panel", "characterPage", "RefreshCharacterPage",
+		"The hero larger, the item slots at both sides and every number under the hero, the Run Stats too. Off, the game's own page.")
+	Setting(page, "Frames a second", "fps", "RefreshFps", "In the screen's bottom left corner. Move frames takes it elsewhere.")
 	Header(page, "Layout")
 	Button(page, "Move frames", 130, function()
 		window:Hide()
@@ -320,6 +323,8 @@ PAGES[4] = { "Minimap", "The minimap with its zone name and its buttons.", funct
 		"Hidden, the options open with /suic.")
 	Setting(page, "Caches and lairs on the minimap", "mapPins", "RefreshMapPins",
 		"A chest for every cache, a red flag for every guardian's lair (faint when empty, beating while it fights), in place of the game's one flag.")
+	Setting(page, "A border round the clock", "clockFrame", "RefreshClock",
+		"The panels' border round the game's clock under the minimap.")
 	Reset(page, { "minimap" })
 end }
 
@@ -336,7 +341,7 @@ PAGES[5] = { "Run tracker", "The run after a Mythic+ timer: the time, every boss
 	Reset(page, { "tracker" })
 end }
 
-PAGES[6] = { "Boss bars", "The game's boss bars as they look, that move and target: click one to target its enemy, hover it for its health. Guardians and elites as chosen.", function(page)
+PAGES[6] = { "Boss bars", "The game's boss bars as they look, that move and target: click one to target its enemy, hover it for its health and to see which enemy it is, its plate lined in white. Guardians and elites as chosen.", function(page)
 	Setting(page, "Show the boss bars", "bossBars", "RefreshBossBars")
 	Size(page, "Size", "bosses")
 	Setting(page, "Lair guardians, awake or hurt", "bossGuardians")
@@ -388,6 +393,8 @@ PAGES[13] = { "Level Up!", "The button that opens the levels waiting (the game's
 end }
 
 PAGES[14] = { "Nameplates", "The game's own nameplates over the enemies and the friends.", function(page)
+	Setting(page, "Overlapping plates", "plateOverlap", "RefreshPlateLayout",
+		"Each plate stays right over its enemy; off, they move apart in a crowd. The game's Nameplate Layout, in its Options.")
 	Header(page, "Keys")
 	local keys = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	keys:SetWidth(PAGE_WIDTH)
@@ -447,6 +454,31 @@ local TEXT_PAGE = { "Combat text", "The numbers over the enemies you hit and ove
 		SUIC.DB().takenSize = value
 		SUIC.ApplyTakenSize()
 	end, function(value) return value.."%" end)
+	Header(page, "Survivor UI's numbers")
+	Setting(page, "Use them in place of the game's numbers", "ctColumns", "ApplyCombatText",
+		"Columns by your hero, each moved with Move frames, in place of numbers over the enemies.")
+	-- Two to a row.
+	local function Both(left, leftKey, right, rightKey)
+		Setting(page, left, leftKey)
+		page.y = page.y + 26
+		local other = Setting(page, right, rightKey)
+		other:ClearAllPoints()
+		other:SetPoint("TOPLEFT", page, "TOPLEFT", 200, page.y + 26)
+	end
+	Both("Spell icons", "ctIcons", "The damage meter's colors", "ctColors")
+	Both("Add up close hits (x3)", "ctAdd", "Crits in their own column", "ctCritColumn")
+	Both("Damage over time", "ctPeriodic", "Damage you take", "ctHitsTaken")
+	Setting(page, "Healing", "ctHeals")
+	Slider(page, "Size", 0.6, 1.5, 0.05, function() return tonumber(SUIC.DB().ctSize) or 1 end, function(value)
+		SUIC.DB().ctSize = value
+	end, Percent)
+	Button(page, "Show a sample", 130, function() SUIC.CombatSample() end)
+	Button(page, "Reset their places", 130, function()
+		for index = 1, table.getn(SUIC.NUMBER_PIECES) do
+			SUIC.ResetPiece(SUIC.NUMBER_PIECES[index])
+		end
+	end, 136)
+	page.y = page.y - 26
 end }
 
 -- The combat text's tab, second, after General.

@@ -6,7 +6,7 @@
 -- game writes it, its biggest crit this run (Crits.lua), its cooldown and its
 -- rank; the racial apart at the bottom (it takes no slot). The empty slots
 -- show, since how many are left matters at every card. Hover a spell for its
--- tooltip.
+-- tooltip, its biggest crit for its crits and hits this run.
 --
 -- From the game's addon API (AZS_SPELLS, your racial last): its spells sit on
 -- the action bar in the list's order, the racial on button 12. In a run only.
@@ -47,13 +47,77 @@ local function SpellName(slot)
 	return name
 end
 
-local function RowEnter()
-	if not this.slot then
+local function Pct(value)
+	return math.floor(value * 100 + 0.5).."%"
+end
+
+local function SpellTip(row)
+	if not row.slot then
 		return
 	end
-	GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-	GameTooltip:SetAction(this.slot)
+	GameTooltip:SetOwner(row, "ANCHOR_LEFT")
+	GameTooltip:SetAction(row.slot)
 	GameTooltip:Show()
+end
+
+local function RowEnter()
+	SpellTip(this)
+end
+
+-- The biggest crit's tooltip, as Survivor UI's Biggest Crits card: the head
+-- lines in gold, the numbers under each in white, beside the panel on the
+-- screen's roomier side. Read again while it is up; with nothing seen yet, the
+-- spell's own.
+local critHover
+
+local function Head(label, value)
+	GameTooltip:AddDoubleLine(label, value, 1, 0.82, 0, 1, 1, 1)
+end
+
+local function Line(label, value)
+	GameTooltip:AddDoubleLine("   "..label, value, 0.75, 0.75, 0.75, 1, 1, 1)
+end
+
+local function CritCard(zone)
+	local row = zone.row
+	local one = row.key and SUIC.SpellRecord(row.key)
+	if not one then
+		SpellTip(row)
+		return
+	end
+	GameTooltip:SetOwner(zone, "ANCHOR_NONE")
+	GameTooltip:ClearAllPoints()
+	if panel:GetCenter() < UIParent:GetCenter() then
+		GameTooltip:SetPoint("TOPLEFT", panel, "TOPRIGHT", 6, 0)
+	else
+		GameTooltip:SetPoint("TOPRIGHT", panel, "TOPLEFT", -6, 0)
+	end
+	GameTooltip:SetText(row.spell or "?")
+	Head("Critical strikes", one.crits)
+	if one.crits > 0 then
+		Line("Biggest", SUIC.Short(one.best))
+		Line("Beaten last", SUIC.Clock((AZS_GetRunTime and AZS_GetRunTime() or 0) - one.bestAt).." ago")
+		Line("Last", SUIC.Short(one.lastCrit))
+		Line("Average", SUIC.Short(one.critSum / one.crits))
+		Line("Smallest", SUIC.Short(one.least))
+	end
+	Head("Normal hits", one.hits)
+	if one.hits > 0 then
+		Line("Average", SUIC.Short(one.hitSum / one.hits))
+		Line("Last", SUIC.Short(one.lastHit))
+	end
+	Head("Crit rate", Pct(one.crits / (one.crits + one.hits)))
+	GameTooltip:Show()
+end
+
+local function CritEnter()
+	critHover = this
+	CritCard(this)
+end
+
+local function CritLeave()
+	critHover = nil
+	GameTooltip:Hide()
 end
 
 local rows = {}
@@ -88,6 +152,14 @@ for index = 1, SLOTS + 1 do
 	row.crit = SUIC.Text(row, "GameFontHighlightSmall")
 	row.crit:SetPoint("CENTER", row, "RIGHT", -RANK_COLUMN - CD_COLUMN - CRIT_COLUMN / 2 + 1, 0)
 	row.crit:SetTextColor(1, 0.55, 0.25)
+	local zone = CreateFrame("Frame", nil, row)
+	zone:SetWidth(CRIT_COLUMN)
+	zone:SetHeight(ROW)
+	zone:SetPoint("RIGHT", row, "RIGHT", -RANK_COLUMN - CD_COLUMN + 1, 0)
+	zone:EnableMouse(true)
+	zone:SetScript("OnEnter", CritEnter)
+	zone:SetScript("OnLeave", CritLeave)
+	zone.row = row
 	rows[index] = row
 end
 
@@ -149,7 +221,8 @@ end
 local function Fill(row, entry, slot, racial)
 	row.slot = slot
 	row.icon:SetTexture(GetActionTexture(slot) or EMPTY)
-	Shorten(row.name, SpellName(slot) or entry.key or "?")
+	row.spell = SpellName(slot) or entry.key or "?"
+	Shorten(row.name, row.spell)
 	if racial then
 		row.name:SetTextColor(0.75, 0.75, 0.75)
 	else
@@ -172,10 +245,6 @@ local function Empty(row)
 	row:Show()
 end
 
-local function Pct(value)
-	return math.floor(value * 100 + 0.5).."%"
-end
-
 -- The three numbers and each spell's biggest crit, read again every second.
 local function Numbers()
 	local s = AZS_STATS
@@ -190,6 +259,9 @@ local function Numbers()
 		local row = rows[index]
 		local crit = row.key and SUIC.BiggestCrit(row.key)
 		row.crit:SetText(crit and SUIC.Short(crit) or "")
+	end
+	if critHover then
+		CritCard(critHover)
 	end
 end
 

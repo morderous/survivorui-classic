@@ -14,7 +14,7 @@ What it gives:
   - While the boxes are up, a grid shows, its middle lines in gold. A box let go snaps to the grid, to the screen's edges and middle, and to the other boxes' edges and middles.
   - A place is kept from the point of the screen nearest the piece, so the layout keeps its shape at any interface size and any resolution: a piece in the middle stays in the middle, one by an edge stays by that edge.
   - The options give each piece its own size, and it grows from where it stands. The whole interface is at 80%, its size a slider in General.
-- **Health in numbers.** The target frame shows an enemy's real health, `12.3k / 40.0k (31%)`, read from the game. Each frame can show Off, Value, Percent or Both.
+- **Health and mana in numbers.** The target frame shows an enemy's real health, `12.3k / 40.0k (31%)`, read from the game, and the mana in the same words. Each frame can show Off, Value, Percent or Both.
 - **Run tracker,** after a Mythic+ timer, in a panel as the others:
   - the zone, with its Heroic level or Endless;
   - your level and the lives left, from Heroic III on the run's affixes, the time in the middle against the final boss's second, and the run's bar with a skull for every boss;
@@ -23,15 +23,17 @@ What it gives:
   - the guardians holding their lairs, in red when all are slain, green while some hold, orange while one fights, and the second each empty lair fills again (hover for every lair);
   - your gold against the next cache's price, in the middle.
   - What is done turns green.
-- **Boss bars.** The game's own as they look, the name in red over a long thin red bar, with two things more: they move, and a click targets the enemy (the one you target is framed in gold; hover for its health). The lair guardians and elites too, as you choose.
+- **Boss bars.** The game's own as they look, the name in red over a long thin red bar, with two things more: they move, and a click targets the enemy (the one you target is framed in gold; hover for its health). The bar under the mouse goes white and lines its enemy's plate in white, and a bar goes white with the mouse on its enemy in the world. The lair guardians and elites too, as you choose.
 - **Cooldown numbers** on the action buttons, down to the tenth of a second, the button darkened while it cools down.
 - **Summons and totems** as the game's buffs, over the action bar's right end and growing toward its middle: how many are out ("6/30" against a limit) and the time the first goes.
 - **Talent cooldowns** over the action bar's left end, growing toward its middle: a second life's wait (Divine Intervention, Cheat Death), a heal's, a proc's, a summoning talent's next; dark and counting while they wait, glowing gold when ready.
 - **Caches and lairs on the minimap**: loot bags for every cache, a skull for every guardian's lair (beating while it fights, faint with a green check while empty), in place of the game's one flag.
-- **Loot notices** and the **Level Up! button**, as the game's but movable.
+- **The character page in one panel**, in the look of the others: the item slots at both sides, the hero between them, turned by holding the mouse on it and pulling, at the hero's left the odds your luck gives on the cards and the necks, at the right Damage, Crit and Crit Dmg, each hovered for its formula with your numbers in it, and under the hero the other numbers in four small panels by kind (Bonus, Utility, Defense, Offense), the game's Run Stats box folded in. The hero's name in the class's color. Off in the options' General tab, the game's own page comes back.
+- **Loot notices** and the **Level Up! button**, as the game's but movable, the button with its key on it.
+- **Frames a second** in the screen's bottom left corner, and **a border round the game's clock** under the minimap.
 - **The whole interface's size**, in the options' General tab.
-- **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, damage, damage a second and share; the lines under 10% folded into Others (the button by its title), Reset to count Damage Done and DPS from now on (the arrow beside it), as tall as the lines you set, in the font size you set.
-- **Build list.** Your Damage, Crit and Crit Dmg in its title; your six spell slots, filled or empty, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart.
+- **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, its number and share; the lines under 10% folded into Others (the button by its title), Reset to count Damage Done and DPS from now on (the arrow beside it), as tall as the lines you set, in the font size you set.
+- **Build list.** Your Damage, Crit and Crit Dmg in its title; your six spell slots, filled or empty, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart. Hover a biggest crit for that spell's crits and hits this run.
 - **Jewelry.** The neck, rings and trinkets you wear this run, and what each one gives.
 - **Combat text in Barlow.** The damage you deal and the damage you take, in Barlow Condensed, each at 30 to 100% of its size, or turned off altogether.
 - **Nameplates** on: V shows or hides the enemies', Shift-V the friends'. The options can show only your target's, or only the bosses', guardians' and elites' (your target's always).
@@ -86,6 +88,34 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.5, 2026-10-31
+
+**A very classy new character panel.** The character page is rebuilt from the ground up, and the rest of the interface gets a long list of small comforts.
+
+**The character panel**
+- **One panel for everything:** a wider window in the look of the other panels, the hero in the middle, the item slots at both sides. The game's Run Stats box is folded in, so every number lives in one place. The Character, Skills and Honor tabs and the ammo slot are gone.
+- **Turn your hero:** hold the mouse on the hero and pull. This works on the game's own page too.
+- **Main stats:** Damage in green, Crit Dmg and Crit in orange, since those two work as a pair. Hover one for its formula, read from the game's code, with your own numbers in it: what your level, gear and the rest add, your average hit, and what your damage, crits and haste give together.
+- **Luck:** your odds of a legendary (orange), epic (purple) or rare (blue) on Cards (spell cards, rings and trinkets) and on Neck (amulets). Hover it for the whole roll: each rarity's weight and share, what amulets, hoards and bosses add, and your odds of a legendary among a level-up's 3 cards.
+- **Four small panels** under the hero, by kind: Bonus, Utility, Defense and Offense, with the game's own numbers and tooltips. Haste shows its formula on its tooltip, and Armor now reads Dmg Reduction, first in Defense.
+- **Your name in your class's color,** a shaman's blue, in the damage meter too, and **a new ring round the portrait,** our own art, sharp at any size.
+- **The character page in one panel**, on the options' General tab, brings the game's own page back.
+
+**Combat**
+- **Survivor UI's combat numbers, as an option:** on the options' Combat text tab, Use them in place of the game's numbers puts columns by your hero: damage on the left, crits on the right, healing over the hero and damage you take under it, each moved with Move frames. Hits close together add up (x3), and each number can wear its spell's icon and the damage meter's color. Off by default.
+- **Damage meter:** clearer letters, white in Barlow with an outline, and a name stays on one line, cut short where it must be. Damage Done shows each line's total and share, with the whole total in its title, the number its lines add up to. DPS shows the damage a second and the share.
+- **Each spell's crits and hits:** hover a biggest crit in the build list for that spell's crits this run (the biggest, when it was last beaten, the last, the average, the smallest), its normal hits and its crit rate.
+- **Which boss is which:** the boss bar under the mouse goes white and lines its enemy's plate in white. With the mouse on an enemy in the world, its bar goes white too.
+- **Pets with an icon:** the damage meter's Pets line, a hunter's beasts added up by the game, has Call Pet's icon, and Survivor UI's numbers use the same name, color and icon.
+
+**Around the screen**
+- **Level Up! button:** higher, at about the height of the damage meter's title, gone altogether while the cards are up, and with its key in a key cap at its right.
+- **Frames a second:** in the screen's bottom left corner, green from 60, gold from 30, red under. Movable, and on the options' General tab to turn off.
+- **A border round the game's clock:** the panels' border, at the clock's size on any screen. **A border round the clock**, on the options' Minimap tab, takes it off.
+- **Mana in the same words as health** on the unit frames: `100 / 100 (100%)`, in the same font and size.
+- **Overlapping plates:** the game's new Nameplate Layout (its 0.131) is set to Overlapping once for everyone, so each plate stays right over its enemy. **Overlapping plates**, on the options' Nameplates tab, turns it back to Stacking.
+- **The summons' count over the icon:** how many summons or totems are out ("4/30") now sits above the icon, with the time under it.
 
 ### 0.2.4, 2026-10-30
 

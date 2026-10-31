@@ -1,8 +1,9 @@
 -- SurvivorUI Classic - Copyright (C) 2026 morderous - GPL-3.0 - github.com/morderous/survivorui-classic
 -- SurvivorUI Classic: the damage meter, at the bottom of the right column. A
--- panel of bars, the most first: the spell's icon, its place and name, its
--- damage, its damage a second and its share. Its title picks the page:
--- Damage Done, Healing, the last boss fight's damage, or the party's heroes.
+-- panel of bars, the most first: the spell's icon, its place and name, then
+-- the page's number and the share. Its title picks the page: Damage Done, DPS,
+-- Healing, the last boss fight's damage, or the party's heroes; those last
+-- three with the damage or healing a second as well.
 -- Hover a line for its numbers. It grows with its lines, up to the most set.
 -- The arrow beside the title, Reset, starts Damage Done and DPS over from
 -- that moment; a new run starts them over by itself.
@@ -15,9 +16,14 @@ local W = SUIC.WIDTH
 local PAD = SUIC.PAD
 local LINE = 14                 -- a bar's height
 local STEP = 17                 -- a bar and the room under it
-local FONT = 10                 -- its texts' size untouched (the options' Font size), a thin black shadow
--- The numbers in three columns at the bars' right, each its text in its
--- middle, as the build list's: the total, the damage a second, the share.
+local FONT = 10                 -- its texts' size (the options' Font size)
+-- White in Barlow, outlined, over the bars' colors; a name in letters it lacks
+-- in the game's own font. Barlow Condensed reads small: two points up.
+local BARLOW = "Interface\\AddOns\\SurvivorUIClassic\\Fonts\\BarlowCondensed-SemiBold.ttf"
+local BARLOW_BUMP = 2
+-- The numbers in columns at the bars' right, each its text in its middle, as
+-- the build list's: the page's number, the damage a second where it has one,
+-- the share.
 local SHARE_COLUMN = 30
 local RATE_COLUMN = 34
 local AMOUNT_COLUMN = 38
@@ -28,9 +34,9 @@ local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 local MODES = {
 	{ key = "damage", name = "Damage Done", rate = "dps" },
 	{ key = "dps", name = "DPS", rate = "dps" },
-	{ key = "healing", name = "Healing", rate = "hps" },
-	{ key = "bosses", name = "Boss Damage", rate = "dps" },
-	{ key = "party", name = "Party", rate = "dps" },
+	{ key = "healing", name = "Healing", rate = "hps", three = true },
+	{ key = "bosses", name = "Boss Damage", rate = "dps", three = true },
+	{ key = "party", name = "Party", rate = "dps", three = true },
 }
 
 -- One color per source, in the order they first show: twelve hues far from
@@ -118,10 +124,13 @@ local function ColorOf(name)
 	return colors[name]
 end
 
+-- For the combat numbers: a source in the color its line has here.
+SUIC.MeterColor = ColorOf
+
 local function ClassColor(class)
-	local color = RAID_CLASS_COLORS and class and RAID_CLASS_COLORS[string.upper(class)]
-	if color then
-		return { color.r, color.g, color.b }
+	local r, g, b = SUIC.ClassColor(class)
+	if r then
+		return { r, g, b }
 	end
 	return { 0.7, 0.7, 0.7 }
 end
@@ -167,36 +176,78 @@ for index = 1, MOST do
 	line.icon:SetHeight(LINE + 1)
 	line.icon:SetPoint("RIGHT", line, "LEFT", -2, 0)
 	line.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-	local font = line.left:GetFont()
-	line.left:SetFont(font, FONT)
 	line.right:Hide()
+	line.gameFont = line.left:GetFont()
 	line.amount = line.over:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	line.amount:SetPoint("CENTER", line, "RIGHT", -SHARE_COLUMN - RATE_COLUMN - AMOUNT_COLUMN / 2, 0)
 	line.rate = line.over:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	line.rate:SetPoint("CENTER", line, "RIGHT", -SHARE_COLUMN - RATE_COLUMN / 2, 0)
-	line.rate:SetTextColor(0.75, 0.75, 0.75)
 	line.share = line.over:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	line.share:SetPoint("CENTER", line, "RIGHT", -SHARE_COLUMN / 2, 0)
-	local texts = { line.left, line.amount, line.rate, line.share }
-	for each = 1, table.getn(texts) do
-		texts[each]:SetFont(font, FONT)
-		texts[each]:SetShadowColor(0, 0, 0, 1)
-		texts[each]:SetShadowOffset(1, -1)
-	end
-	line.left:SetWidth(W - 2 * PAD - LINE - 8 - SHARE_COLUMN - RATE_COLUMN - AMOUNT_COLUMN)
-	line.texts = texts
+	line.share:SetTextColor(1, 0.9, 0.3)
+	line.texts = { line.left, line.amount, line.rate, line.share }
 	line:Hide()
 	lines[index] = line
 end
 
 -- The lines' texts at the size chosen (the options' Damage meter tab).
 function SUIC.ApplyMeterFont()
-	local size = tonumber(SUIC.DB().meterFont) or FONT
+	local size = (tonumber(SUIC.DB().meterFont) or FONT) + BARLOW_BUMP
 	for index = 1, MOST do
 		local texts = lines[index].texts
 		for each = 1, table.getn(texts) do
-			local font = texts[each]:GetFont()
-			texts[each]:SetFont(font, size)
+			texts[each]:SetFont(BARLOW, size, "OUTLINE")
+			texts[each]:SetShadowOffset(0, 0)
+		end
+		lines[index].said = nil
+	end
+end
+
+-- The columns of a page: the second only where it has one. The name has the
+-- rest, on one line: a text given a width would break in two.
+local arranged
+local function Arrange(mode)
+	if arranged == mode then
+		return
+	end
+	arranged = mode
+	local columns = SHARE_COLUMN + AMOUNT_COLUMN + (mode.three and RATE_COLUMN or 0)
+	for index = 1, MOST do
+		local line = lines[index]
+		line.amount:ClearAllPoints()
+		line.amount:SetPoint("CENTER", line, "RIGHT", AMOUNT_COLUMN / 2 - columns, 0)
+		line.room = W - 2 * PAD - LINE - 8 - columns
+		line.said = nil
+		if mode.three then
+			line.rate:Show()
+		else
+			line.rate:Hide()
+		end
+	end
+end
+
+-- The name on one line, cut short with dots to its room. The tag goes first.
+local function SayName(line, name, tag)
+	local text = name..tag
+	if line.said == text then
+		return
+	end
+	line.said = text
+	local size = (tonumber(SUIC.DB().meterFont) or FONT) + BARLOW_BUMP
+	if string.find(text, "[\128-\255]") then
+		line.left:SetFont(line.gameFont, size - BARLOW_BUMP, "OUTLINE")
+	else
+		line.left:SetFont(BARLOW, size, "OUTLINE")
+	end
+	line.left:SetText(text)
+	if line.left:GetStringWidth() <= line.room then
+		return
+	end
+	local kept = string.len(name)
+	while kept > 1 do
+		kept = kept - 1
+		line.left:SetText(string.sub(name, 1, kept).."...")
+		if line.left:GetStringWidth() <= line.room then
+			return
 		end
 	end
 end
@@ -324,11 +375,11 @@ local function Tag(entry)
 	if tonumber(entry.proc) ~= 1 then
 		return ""
 	elseif NECKS[name] or string.find(name, ": ", 1, true) then
-		return " |cff8a8a8a(neck)|r"
+		return " |cffd0d0d0(neck)|r"
 	elseif SUIC_TALENT_ICONS and SUIC_TALENT_ICONS[name] then
-		return " |cff8a8a8a(talent)|r"
+		return " |cffd0d0d0(talent)|r"
 	end
-	return " |cff8a8a8a(proc)|r"
+	return " |cffd0d0d0(proc)|r"
 end
 
 local function Fill(line, entry, index, top, mode)
@@ -349,17 +400,12 @@ local function Fill(line, entry, index, top, mode)
 	line:SetStatusBarColor(color[1], color[2], color[3], 0.85)
 	line:SetValue(top > 0 and (tonumber(entry.dmg) or 0) / top or 0)
 	line.amount:SetText(SUIC.Short(entry.dmg))
-	-- The DPS page's lines are a second's already: no second column there.
-	if entry.perSecond or (entry.folded and entry.folded[1].perSecond) then
-		line.rate:SetText("")
-	else
-		line.rate:SetText(SUIC.Short(entry.dps))
-	end
+	line.rate:SetText(SUIC.Short(entry.dps))
 	line.share:SetText(math.floor((tonumber(entry.share) or 0) * 100 + 0.5).."%")
 	if entry.folded then
-		line.left:SetText(entry.name)
+		SayName(line, entry.name, "")
 	else
-		line.left:SetText(index..". "..(entry.name or "?")..Tag(entry))
+		SayName(line, index..". "..(entry.name or "?"), Tag(entry))
 	end
 	line:Show()
 end
@@ -434,6 +480,7 @@ local function Draw()
 	else
 		reset:Hide()
 	end
+	Arrange(mode)
 	local data, sum, perSecond = Data(mode)
 	data = data or {}
 	panel.title:SetText(mode.name)
@@ -446,6 +493,9 @@ local function Draw()
 			color = now >= (perSecond or 0) and "73f280" or "ff9a4d"
 		end
 		panel.note:SetText("|cffffd100NOW|r |cff"..color..(now and SUIC.Short(now) or "...").."|r   |cffffd100AVG|r "..SUIC.Short(perSecond or 0))
+	elseif mode.key == "damage" then
+		-- The total alone: what the lines under it add up to.
+		panel.note:SetText(SUIC.Short(sum or 0))
 	else
 		panel.note:SetText(SUIC.Short(perSecond or 0).." "..mode.rate.."  |cffaaaaaa"..SUIC.Short(sum or 0).."|r")
 	end

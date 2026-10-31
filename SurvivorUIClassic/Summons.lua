@@ -1,6 +1,6 @@
 -- SurvivorUI Classic - Copyright (C) 2026 morderous - GPL-3.0 - github.com/morderous/survivorui-classic
 -- SurvivorUI Classic: your summons and totems, as the game's buffs, in a row
--- over the action bar's right half, from its right edge in: a kind an icon, how many are out in its corner
+-- over the action bar's right half, from its right edge in: a kind an icon, how many are out over it
 -- ("3/5" where the game keeps a limit, a totem's cap or a greater demon's),
 -- the time the first of them goes under it, as a buff's duration. One that
 -- stays the whole run shows its icon alone. Hover an icon for its name.
@@ -10,12 +10,13 @@
 local SIZE = 26
 local GAP = 5
 local MOST = 12
+local COUNT = 11                -- the count's line over the icons
 -- How many of a kind the game lets out at once (its 0.110; Survivor UI's).
 local LIMITS = { infernal = 1, doomguard = 1, felguard = 2, pit_lord = 2, water_elemental = 1, treant = 2, spirit_wolf = 2 }
 
 local holder = CreateFrame("Frame", "SUICSummons", UIParent)
 holder:SetWidth(4 * (SIZE + GAP))
-holder:SetHeight(SIZE + 14)
+holder:SetHeight(COUNT + SIZE + 14)
 
 local function Home(f)
 	f:SetPoint("BOTTOMRIGHT", MainMenuBar, "TOPRIGHT", -4, 6)
@@ -50,17 +51,17 @@ for index = 1, MOST do
 	local slot = CreateFrame("Frame", nil, holder)
 	slot:SetWidth(SIZE)
 	slot:SetHeight(SIZE)
-	slot:SetPoint("TOPRIGHT", holder, "TOPRIGHT", -(index - 1) * (SIZE + GAP), 0)
+	slot:SetPoint("TOPRIGHT", holder, "TOPRIGHT", -(index - 1) * (SIZE + GAP), -COUNT)
 	slot:EnableMouse(true)
 	slot:SetScript("OnEnter", SlotEnter)
 	slot:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	slot.icon = slot:CreateTexture(nil, "ARTWORK")
 	slot.icon:SetAllPoints(slot)
-	-- The count small in the icon's corner, outlined, so "6/30" fits it.
+	-- The count over the icon, outlined, clear of its art.
 	slot.number = slot:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 	local font = slot.number:GetFont()
 	slot.number:SetFont(font or STANDARD_TEXT_FONT, 9, "OUTLINE")
-	slot.number:SetPoint("BOTTOMRIGHT", slot, "BOTTOMRIGHT", 0, 1)
+	slot.number:SetPoint("BOTTOM", slot, "TOP", 0, 1)
 	slot.time = slot:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	slot.time:SetPoint("TOP", slot, "BOTTOM", 0, -1)
 	slot:Hide()

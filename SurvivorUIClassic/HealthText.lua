@@ -1,5 +1,6 @@
 -- SurvivorUI Classic - Copyright (C) 2026 morderous - GPL-3.0 - github.com/morderous/survivorui-classic
--- SurvivorUI Classic: health in numbers on the player and target frames.
+-- SurvivorUI Classic: health and mana in numbers on the player and target
+-- frames, the mana's words as the health's.
 --
 -- The client alone gives an enemy's health only as a share (its most is 100);
 -- the game sends addons the real numbers of the target (AZS_TARGET), so the
@@ -57,6 +58,34 @@ end
 
 local playerText = MakeText(PlayerFrameHealthBar, PlayerFrame)
 local targetText = MakeText(TargetFrameHealthBar, TargetFrame)
+local playerMana = MakeText(PlayerFrameManaBar, PlayerFrame)
+local targetMana = MakeText(TargetFrameManaBar, TargetFrame)
+
+-- A frame's mana, rage or energy, in the health's style: the stock numbers
+-- ("Mana 100 / 100", in a larger font) kept off, as on the health's bar.
+local function UpdateMana(text, bar, stock, unit, style)
+	if not text then
+		return
+	end
+	if style == "off" then
+		if stock then
+			bar.TextString = stock
+		end
+		text:Hide()
+		return
+	end
+	if stock then
+		bar.TextString = nil
+		stock:Hide()
+	end
+	local most = UnitManaMax(unit) or 0
+	if most > 0 and UnitExists(unit) then
+		Fit(text, Text(style, UnitMana(unit), most))
+		text:Show()
+	else
+		text:Hide()
+	end
+end
 
 local function UpdatePlayer()
 	if not playerText then
@@ -78,6 +107,7 @@ local function UpdatePlayer()
 	else
 		playerText:Show()
 	end
+	UpdateMana(playerMana, PlayerFrameManaBar, PlayerFrameManaBarText, "player", style)
 end
 
 local function UpdateTarget()
@@ -85,6 +115,7 @@ local function UpdateTarget()
 		return
 	end
 	local style = SUIC.DB().targetHealth
+	UpdateMana(targetMana, TargetFrameManaBar, TargetFrameManaBarText, "target", style)
 	if style == "off" or not UnitExists("target") then
 		targetText:Hide()
 		return
@@ -135,6 +166,11 @@ SUIC.OnStart(function()
 	watch:RegisterEvent("PLAYER_TARGET_CHANGED")
 	watch:RegisterEvent("UNIT_HEALTH")
 	watch:RegisterEvent("UNIT_MAXHEALTH")
+	watch:RegisterEvent("UNIT_MANA")
+	watch:RegisterEvent("UNIT_MAXMANA")
+	watch:RegisterEvent("UNIT_RAGE")
+	watch:RegisterEvent("UNIT_ENERGY")
+	watch:RegisterEvent("UNIT_DISPLAYPOWER")
 	watch:RegisterEvent("CHAT_MSG_ADDON")
 	SUIC.UpdateHealthText()
 end)

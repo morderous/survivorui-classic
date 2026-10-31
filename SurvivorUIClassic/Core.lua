@@ -56,11 +56,24 @@ local DEFAULTS = {
 	meterFoldShare = 10,
 	mapButton = true,          -- the addon's button on the minimap
 	mapPins = true,            -- the caches and the lairs on the minimap (MapPins.lua)
+	clockFrame = true,         -- a border round the game's clock under it (Clock.lua)
+	fps = true,                -- the frames a second, in the screen's corner (Fps.lua)
 	lootLog = true,            -- the loot notices (Loot.lua)
 	summons = true,            -- the summons and totems (Summons.lua)
 	talentTimers = true,       -- the talents' clocks (TalentTimers.lua)
 	levelUp = true,            -- the Level Up! button (LevelUp.lua)
+	characterPage = true,      -- the character page in one panel (CharacterPage.lua)
+	plateOverlap = true,       -- the game's Nameplate Layout, Overlapping (Nameplates.lua)
 	combatText = true,         -- the game's combat text at all (CombatText.lua)
+	ctColumns = false,         -- Survivor UI's numbers in its place (CombatColumns.lua)
+	ctIcons = true,            -- each with its source's icon
+	ctColors = true,           -- in the damage meter's color
+	ctAdd = true,              -- hits close together added up (x3)
+	ctCritColumn = true,       -- the crits in a column of their own
+	ctPeriodic = true,         -- damage over time
+	ctHitsTaken = true,        -- the damage you take
+	ctHeals = true,            -- the healing
+	ctSize = 1,
 	numberSize = 40,           -- the damage you deal's numbers, in Barlow, 30 to 100%
 	takenSize = 30,            -- the damage you take's, in Barlow too, 30 to 100%
 }
@@ -114,6 +127,17 @@ end
 
 function SUIC.Default(key)
 	return DEFAULTS[key]
+end
+
+-- A class's color, r, g, b: the shaman's blue, not the old client's pink.
+local SHAMAN_BLUE = { r = 0, g = 0.44, b = 0.87 }
+
+function SUIC.ClassColor(class)
+	local key = class and string.upper(class)
+	local color = key == "SHAMAN" and SHAMAN_BLUE or (key and RAID_CLASS_COLORS and RAID_CLASS_COLORS[key])
+	if color then
+		return color.r, color.g, color.b
+	end
 end
 
 function SUIC.Print(text)

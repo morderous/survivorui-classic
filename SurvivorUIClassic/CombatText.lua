@@ -18,6 +18,9 @@
 -- game, that is not saved (Core.lua). The text over your hero stops short of
 -- its strings, every kind of it, whatever the game's options show: none of the
 -- game's settings is touched for it.
+--
+-- With Survivor UI's numbers on (CombatColumns.lua) the same setting is off, and
+-- the hits and heals over your hero are theirs; the rest of the text stays.
 
 local FOLDER = "Interface\\AddOns\\SurvivorUIClassic\\Fonts\\"
 local BARLOW = FOLDER.."BarlowCondensed-SemiBold.ttf"
@@ -64,9 +67,24 @@ function SUIC.GameNumbers()
 	return GetCVar("CombatDamage") ~= "0"
 end
 
-local stockAdd
+-- The numbers over the enemies wanted: the combat text on, and it the game's.
+local function GameWanted()
+	local db = SUIC.DB()
+	return db.combatText and not db.ctColumns
+end
+
+local stockAdd, stockEvent
 
 local function HoldText()
+	if not stockEvent and CombatText_OnEvent then
+		stockEvent = CombatText_OnEvent
+		CombatText_OnEvent = function(kind)
+			if kind == "COMBAT_TEXT_UPDATE" and SUIC.DB().ctColumns and SUIC.NUMBER_TYPES[arg1] then
+				return
+			end
+			return stockEvent(kind)
+		end
+	end
 	if not stockAdd and CombatText_AddMessage then
 		stockAdd = CombatText_AddMessage
 		CombatText_AddMessage = function(message, scroll, r, g, b, kind, staggered)
@@ -79,7 +97,10 @@ end
 
 function SUIC.ApplyCombatText()
 	HoldText()
-	SetCVar("CombatDamage", SUIC.DB().combatText and "1" or "0")
+	SetCVar("CombatDamage", GameWanted() and "1" or "0")
+	if SUIC.ApplyCombatColumns then
+		SUIC.ApplyCombatColumns()
+	end
 end
 
 -- The damage font set as this addon loads, the game reading it just after,
@@ -92,7 +113,7 @@ loader:RegisterEvent("PLAYER_LEAVING_WORLD")
 loader:RegisterEvent("PLAYER_LOGOUT")
 loader:SetScript("OnEvent", function()
 	if event ~= "ADDON_LOADED" then
-		if SUIC.active and not SUIC.DB().combatText then
+		if SUIC.active and not GameWanted() then
 			SetCVar("CombatDamage", event == "PLAYER_ENTERING_WORLD" and "0" or "1")
 		end
 	elseif arg1 == "SurvivorUIClassic" then
@@ -106,7 +127,7 @@ loader:SetScript("OnEvent", function()
 end)
 
 SUIC.OnStart(function()
-	if not SUIC.DB().combatText then
+	if not GameWanted() then
 		SetCVar("CombatDamage", "0")
 	elseif SurvivorUI_Standby and not SUIC.GameNumbers() then
 		SetCVar("CombatDamage", "1")
