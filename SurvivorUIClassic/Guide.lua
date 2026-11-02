@@ -40,6 +40,16 @@
 --     5 or more enemies are within 8 yards"), which stands outside the cap, and
 --     only then shields. Past the cap, lost but for Unbreakable; Defiance reads
 --     the reduction after the cap.
+--   Haste (0.139: the sum 0x145ed1410, the wait 0x145f2f3a0): every cooldown
+--     bonus added, a cooldown x 1 / (1 + them), no cap; the game shows 1 - 1 /
+--     (1 + them). No wait under 0.25 sec (Hellfire 0.5, Divine Shield its own).
+--   Echo (0x145f6b260): under 100%, one roll, rolled again while it lands for
+--     the Mage capstone, 3 more at most; from 100%, all of those land, one more
+--     for each 100% past it, the rest one more roll. Each strike is a whole
+--     cast, its targets and Crit its own.
+--   Speed: 7 yd a second x (1 + bonuses), 2.2 at most. Pickup: 9 yd x (1 + each
+--     bonus), one after another. Area: every radius and reach x (1 + bonuses);
+--     past 70 yd, 70 + 10 x ln(1 + (yd - 70) / 10).
 
 local WIDTH, HEIGHT = 770, 584
 local LEFT = 130                -- the pages' left edge, past the tabs
@@ -53,6 +63,7 @@ local NEW_MARK = "Interface\\AddOns\\SurvivorUIClassic\\Art\\GuideNew"
 local READ_MARK = "Interface\\AddOns\\SurvivorUIClassic\\Art\\GuideRead"
 local MAP_ICON = "Interface\\AddOns\\SurvivorUIClassic\\Art\\MapIcon"
 local STAR = "Interface\\AddOns\\SurvivorUIClassic\\Art\\Star"
+local DISC = "Interface\\AddOns\\SurvivorUIClassic\\Art\\Disc"
 local HIGHLIGHT = "Interface\\QuestFrame\\UI-QuestTitleHighlight"
 local GOLD = "|cffffd100"
 local GREEN = { 0.35, 0.95, 0.45 }  -- as on the character page
@@ -144,6 +155,16 @@ local CHIP_GAP = 5
 local CHIP_REST, CHIP_LIT = 0.5, 0.66   -- how much of the class's color fills a chip
 local WALL_WIDTH = PAGE_WIDTH   -- the wall's bar
 local WALL_HEIGHT = 16
+local FLOOR = 0.25              -- the shortest wait, in seconds
+local CASCADE = 3               -- the Mage capstone's rolls again
+local ROW_LABEL = 104           -- where a row's marbles start, past its name
+local CASTS, CAST_MARBLE = 38, 12
+local STRIKES, STRIKE, STRIKE_STEP = 9, 18, 22
+local RUN, MOST_SPEED = 7, 2.2  -- yards a second, and the cap
+local PICKUP = 9                -- yards
+local SOFT_REACH = 70           -- yards
+local REACH_BOX = 196
+local DISC_MOST = 48            -- the widest circle's radius
 -- Hellfire looks the same and works another way: nothing stays on the ground.
 local HELLFIRE = { "Hellfire", "Spell_Fire_Incinerate", "WARLOCK", "Warlock spell" }
 local ROW_STEP = 14
@@ -283,6 +304,13 @@ local function FromHero()
 	try.armor = s and tonumber(s.arm) or 0
 	try.cap = try.armor > 0.6 and 0.7 or 0.6
 	try.crowd = 0
+	try.cooldowns = s and tonumber(s.cd) and 1 / tonumber(s.cd) - 1 or 0
+	try.wait = try.wait or 8
+	try.echo = s and tonumber(s.echo) or 0
+	try.speed = s and tonumber(s.spd) and tonumber(s.spd) - 1 or 0
+	try.pickup = s and tonumber(s.pick) and tonumber(s.pick) / PICKUP - 1 or 0
+	try.pickup2 = 0
+	try.area = s and tonumber(s.area) and tonumber(s.area) - 1 or 0
 end
 
 -- Our tooltips stand over the guide's words, and the game's tooltip art lets
@@ -884,6 +912,175 @@ local function BuildDots(page)
 end
 
 ------------------------------------------------------------------------------
+-- Haste and Echo.
+
+-- To a tenth, a whole number without its .0.
+local function Count(value)
+	if math.abs(value - math.floor(value + 0.5)) < 0.05 then
+		return string.format("%d", math.floor(value + 0.5))
+	end
+	return string.format("%.1f", value)
+end
+
+local function Seconds(value)
+	if value < 1 then
+		return string.format("%.2f sec", value)
+	end
+	return string.format("%.1f sec", value)
+end
+
+-- Each strike past the first in one cast, by its chance. Under 100% Echo it is
+-- one roll, rolled again while it lands as many more times as `again`; from
+-- 100%, all of those land, one more for each 100% past it, and the rest is
+-- one more roll.
+local function Echoes(echo, again)
+	local chances = {}
+	if echo >= 1 then
+		local whole = math.floor(echo - 1 + 0.0001)
+		local sure = again + 1 + whole
+		for index = 1, sure do
+			chances[index] = 1
+		end
+		local rest = echo - 1 - whole
+		if rest > 0.0001 then
+			chances[sure + 1] = rest
+		end
+	elseif echo > 0 then
+		local chance = 1
+		for index = 1, again + 1 do
+			chance = chance * echo
+			chances[index] = chance
+		end
+	end
+	return chances
+end
+
+-- A row's name, then its marbles, hidden until drawn.
+local function MarbleRow(page, y, name, count, size, step, color)
+	Words(page, 0, y - math.floor((size - 12) / 2), ROW_LABEL - 6, name, SMALL + 1)
+	local row = {}
+	for index = 1, count do
+		local marble = page:CreateTexture(nil, "ARTWORK")
+		marble:SetTexture(MARBLE)
+		marble:SetVertexColor(color[1], color[2], color[3])
+		marble:SetWidth(size - 1)
+		marble:SetHeight(size - 1)
+		marble:SetPoint("TOPLEFT", page, "TOPLEFT", ROW_LABEL + (index - 1) * step, y)
+		marble:Hide()
+		row[index] = marble
+	end
+	row.more = SUIC.Text(page, "GameFontHighlight", SMALL)
+	row.more:SetPoint("LEFT", row[count], "RIGHT", 4, 0)
+	return row
+end
+
+-- A minute's casts, a marble each.
+local function DrawCasts(row, many)
+	local whole = math.floor(many + 0.0001)
+	for index = 1, CASTS do
+		if index <= whole then
+			row[index]:Show()
+		else
+			row[index]:Hide()
+		end
+	end
+	row.more:SetText(whole > CASTS and "+"..(whole - CASTS) or "")
+end
+
+-- One cast's strikes, each marble as bright as the strike is likely, with its
+-- chance on it.
+local function StrikeRow(page, y, name)
+	local row = MarbleRow(page, y, name, STRIKES, STRIKE, STRIKE_STEP, YELLOW)
+	for index = 1, STRIKES do
+		local chance = SUIC.Text(page, "GameFontHighlight", 8)
+		chance:SetPoint("CENTER", row[index], "CENTER", 0, 0)
+		chance:SetTextColor(0.15, 0.08, 0)
+		chance:SetShadowOffset(0, 0)
+		row[index].chance = chance
+	end
+	return row
+end
+
+local function DrawStrikes(row, chances)
+	local total = 1
+	for index = 1, table.getn(chances) do
+		total = total + chances[index]
+	end
+	for index = 1, STRIKES do
+		local marble = row[index]
+		local chance = index == 1 and 1 or chances[index - 1]
+		if chance then
+			marble:SetAlpha(0.3 + 0.7 * chance)
+			marble:Show()
+		else
+			marble:Hide()
+		end
+		if chance and chance < 1 then
+			marble.chance:SetText(string.format("%.0f%%", chance * 100))
+		else
+			marble.chance:SetText("")
+		end
+	end
+	row.more:SetText(string.format("= %.2f strikes", total))
+	return total
+end
+
+local function BuildHaste(page)
+	Title(page, "Haste and Echo: how often")
+	Para(page, "Haste brings your spells back sooner. Echo makes a spell strike again, right away. "
+		.."Both give you more hits, and "..GOLD.."neither has a cap.|r", 2)
+	Warning(page, TEAL, "HASTE 50% IS TWICE AS OFTEN", "The game shows how much sooner. No spell comes back faster than 0.25 sec.")
+	Heading(page, "Haste: sooner")
+	page.y = page.y - 14
+	local bonus = Try(page, 8, page.y, 180, "Cooldown bonuses", 0, 3, 0.05, Signed, function(value) try.cooldowns = value end)
+	local wait = Try(page, 214, page.y, 180, "Its cooldown", 0.5, 15, 0.5, Seconds, function(value) try.wait = value end)
+	MyHero(page, PAGE_WIDTH - 84, page.y + 4)
+	page.y = page.y - 34
+	page.shown = Words(page, 0, page.y, PAGE_WIDTH, "")
+	page.spell = Words(page, 0, page.y - LINE, PAGE_WIDTH, "")
+	page.y = page.y - 2 * LINE - 6
+	local slow = MarbleRow(page, page.y, "No Haste", CASTS, CAST_MARBLE, CAST_MARBLE, GREY)
+	local fast = MarbleRow(page, page.y - CAST_MARBLE - 2, "Your Haste", CASTS, CAST_MARBLE, CAST_MARBLE, TEAL)
+	page.y = page.y - 2 * CAST_MARBLE - 12
+	Heading(page, "Echo: again, right away")
+	page.y = page.y - 14
+	local echo = Try(page, 8, page.y, 180, "Echo", 0, 3, 0.05, Whole, function(value) try.echo = value end)
+	page.y = page.y - 32
+	local plain = StrikeRow(page, page.y, "Your spells")
+	local cascade = StrikeRow(page, page.y - STRIKE_STEP, "Mage capstone")
+	page.y = page.y - 2 * STRIKE_STEP - 4
+	page.together = Words(page, 0, page.y, PAGE_WIDTH, "")
+	page.y = page.y - LINE - 6
+	Tip(page, GOLD.."Each strike is a whole cast:|r it aims again and rolls its own Crit. A DoT lands again, a ground spell opens one more circle.", 2)
+	Tip(page, "|cff4de6d9Every \"-10% cooldowns\"|r goes into one number first. Two -50% don't make 0: they make half.")
+	Tip(page, "|cff4de6d9Demons|r echo only through Master Demonologist.")
+
+	function page.Draw()
+		bonus.Read(try.cooldowns)
+		wait.Read(try.wait)
+		echo.Read(try.echo)
+		local divide = 1 + try.cooldowns
+		local real = math.max(try.wait / divide, FLOOR)
+		page.shown:SetText(string.format("Cooldown bonuses %s: every wait is divided by %.2f. The game shows it as Haste "..GOLD.."%s|r.",
+			Signed(try.cooldowns), divide, Whole(1 - 1 / divide)))
+		local before, after = 60 / try.wait, 60 / real
+		if try.wait / divide < FLOOR then
+			page.spell:SetText(string.format("This spell: %s becomes "..GOLD.."0.25 sec|r, the floor. |cffff7366Past %s, more Haste is lost on it.|r",
+				Seconds(try.wait), Signed(try.wait / FLOOR - 1)))
+		else
+			page.spell:SetText(string.format("This spell: %s becomes "..GOLD.."%s|r: %s casts a minute instead of %s. A marble is a cast:",
+				Seconds(try.wait), Seconds(real), Count(after), Count(before)))
+		end
+		DrawCasts(slow, before)
+		DrawCasts(fast, after)
+		local strikes = DrawStrikes(plain, Echoes(try.echo, 0))
+		DrawStrikes(cascade, Echoes(try.echo, CASCADE))
+		page.together:SetText(string.format("Together they multiply: %s casts a minute x %.2f strikes = "..GOLD.."%s strikes a minute|r.",
+			Count(after), strikes, Count(after * strikes)))
+	end
+end
+
+------------------------------------------------------------------------------
 -- Not DoTs: the spells that strike again and again from the ground.
 
 local function ClassTint(class)
@@ -1045,6 +1242,48 @@ local function Chips(page, list)
 	page.y = page.y - math.ceil(table.getn(list) / 4) * (CHIP_HEIGHT + CHIP_GAP)
 end
 
+-- A bar: what holds in green, what is lost past the cap in red, the cap in gold.
+local function Wall(page)
+	local wall = {}
+	wall.ground = page:CreateTexture(nil, "BORDER")
+	wall.ground:SetTexture(SUIC.FLAT)
+	wall.ground:SetVertexColor(0, 0, 0, 0.6)
+	wall.ground:SetWidth(WALL_WIDTH)
+	wall.ground:SetHeight(WALL_HEIGHT)
+	wall.ground:SetPoint("TOPLEFT", page, "TOPLEFT", 0, page.y)
+	wall.held = page:CreateTexture(nil, "ARTWORK")
+	wall.held:SetTexture(SUIC.FLAT)
+	wall.held:SetVertexColor(GREEN[1] * 0.7, GREEN[2] * 0.7, GREEN[3] * 0.7)
+	wall.held:SetHeight(WALL_HEIGHT)
+	wall.held:SetPoint("TOPLEFT", wall.ground, "TOPLEFT", 0, 0)
+	wall.lost = page:CreateTexture(nil, "ARTWORK")
+	wall.lost:SetTexture(SUIC.FLAT)
+	wall.lost:SetVertexColor(RED[1] * 0.8, RED[2] * 0.5, RED[3] * 0.5)
+	wall.lost:SetHeight(WALL_HEIGHT)
+	wall.lost:SetPoint("TOPLEFT", wall.held, "TOPRIGHT", 0, 0)
+	wall.line = page:CreateTexture(nil, "OVERLAY")
+	wall.line:SetTexture(SUIC.FLAT)
+	wall.line:SetVertexColor(1, 0.82, 0)
+	wall.line:SetWidth(2)
+	wall.line:SetHeight(WALL_HEIGHT + 6)
+	page.y = page.y - WALL_HEIGHT - 8
+	return wall
+end
+
+-- What holds, what is lost and the cap, each a share of the bar.
+local function DrawWall(wall, kept, over, cap)
+	-- A texture of no width draws at its art's size, so at least a sliver.
+	wall.held:SetWidth(math.max(1, kept * WALL_WIDTH))
+	wall.lost:SetWidth(math.max(1, over * WALL_WIDTH))
+	if over > 0 then
+		wall.lost:Show()
+	else
+		wall.lost:Hide()
+	end
+	wall.line:ClearAllPoints()
+	wall.line:SetPoint("CENTER", wall.ground, "LEFT", cap * WALL_WIDTH, 0)
+end
+
 local function BuildArmor(page)
 	Title(page, "Damage Reduction: the wall")
 	Para(page, "Every hit on you meets this wall first. At 40%, a hit of 100 lands for 60. "
@@ -1076,29 +1315,7 @@ local function BuildArmor(page)
 	local cap = Try(page, 214, page.y, 180, "Cap", 0.6, 0.7, 0.1, Whole, function(value) try.cap = value end)
 	local crowd = Try(page, 420, page.y, 180, "Enemies close", 0, 0.2, 0.01, Whole, function(value) try.crowd = value end)
 	page.y = page.y - 32
-	-- The wall: what holds in green, what is lost past the cap in red, the cap in gold.
-	local ground = page:CreateTexture(nil, "BORDER")
-	ground:SetTexture(SUIC.FLAT)
-	ground:SetVertexColor(0, 0, 0, 0.6)
-	ground:SetWidth(WALL_WIDTH)
-	ground:SetHeight(WALL_HEIGHT)
-	ground:SetPoint("TOPLEFT", page, "TOPLEFT", 0, page.y)
-	local held = page:CreateTexture(nil, "ARTWORK")
-	held:SetTexture(SUIC.FLAT)
-	held:SetVertexColor(GREEN[1] * 0.7, GREEN[2] * 0.7, GREEN[3] * 0.7)
-	held:SetHeight(WALL_HEIGHT)
-	held:SetPoint("TOPLEFT", ground, "TOPLEFT", 0, 0)
-	local lost = page:CreateTexture(nil, "ARTWORK")
-	lost:SetTexture(SUIC.FLAT)
-	lost:SetVertexColor(RED[1] * 0.8, RED[2] * 0.5, RED[3] * 0.5)
-	lost:SetHeight(WALL_HEIGHT)
-	lost:SetPoint("TOPLEFT", held, "TOPRIGHT", 0, 0)
-	local line = page:CreateTexture(nil, "OVERLAY")
-	line:SetTexture(SUIC.FLAT)
-	line:SetVertexColor(1, 0.82, 0)
-	line:SetWidth(2)
-	line:SetHeight(WALL_HEIGHT + 6)
-	page.y = page.y - WALL_HEIGHT - 8
+	local wall = Wall(page)
 	page.land = Words(page, 0, page.y, PAGE_WIDTH, "")
 	page.y = page.y - LINE - 8
 	Tip(page, "|cff59f273Past the wall:|r shields soak what gets through. Gear that cuts damage \"while 5 or more enemies are within 8 yards\" works on top of the cap: 60% and 10% make 64%.", 2)
@@ -1113,19 +1330,109 @@ local function BuildArmor(page)
 		local kept = math.min(try.armor, try.cap)
 		local over = math.max(try.armor - try.cap, 0)
 		local lands = 100 * (1 - kept) * (1 - try.crowd)
-		-- A texture of no width draws at its art's size, so at least a sliver.
-		held:SetWidth(math.max(1, kept * WALL_WIDTH))
-		lost:SetWidth(math.max(1, over * WALL_WIDTH))
-		if over > 0 then
-			lost:Show()
-		else
-			lost:Hide()
-		end
-		line:ClearAllPoints()
-		line:SetPoint("CENTER", ground, "LEFT", try.cap * WALL_WIDTH, 0)
+		DrawWall(wall, kept, over, try.cap)
 		local gone = over > 0 and string.format("  |cffff7366%.0f points past the cap are lost.|r", over * 100) or ""
 		page.land:SetText(string.format("A hit of 100 lands for "..GOLD.."%.0f|r, so your health counts "..GOLD.."%.1f|r times.%s",
 			lands, 100 / math.max(lands, 1), gone))
+	end
+end
+
+------------------------------------------------------------------------------
+-- Speed, pickup and area.
+
+-- A reach as the game grows it: past 70 yd, slower and slower.
+local function Reach(yards)
+	if yards <= SOFT_REACH then
+		return yards
+	end
+	return SOFT_REACH + 10 * math.log(1 + (yards - SOFT_REACH) / 10)
+end
+
+local function Yards(value)
+	return string.format("%.1f yd", value)
+end
+
+-- A tinted panel with its title on a band, sliders of the page standing on it.
+local function Panel(page, color, x, y, width, title)
+	local box = Tinted(page, color, x, y, width, REACH_BOX)
+	Band(box, color, "TOP", 20)
+	local head = SUIC.Text(box, "GameFontNormal", TEXT)
+	head:SetPoint("CENTER", box, "TOP", 0, -14)
+	head:SetText(title)
+	Paint(head, color)
+	return box
+end
+
+local function Disc(box, layer, color, alpha)
+	local disc = box:CreateTexture(nil, layer)
+	disc:SetTexture(DISC)
+	disc:SetVertexColor(color[1], color[2], color[3], alpha)
+	return disc
+end
+
+local function BuildReach(page)
+	Title(page, "Speed, Pickup and Area: how far")
+	Para(page, "Speed is how fast you run. Pickup is how far experience and gold fly to you. "
+		.."Area is how wide your spells strike, and how far they reach.", 2)
+	Warning(page, BLUE, "SPEED STOPS AT +120%", "You run 7 yards a second, 15.4 at most. Past +120%, more Speed does nothing.")
+	page.y = page.y - 14
+	local speed = Try(page, 8, page.y, 180, "Speed", 0, 2, 0.05, Signed, function(value) try.speed = value end)
+	MyHero(page, PAGE_WIDTH - 84, page.y + 4)
+	page.y = page.y - 30
+	local wall = Wall(page)
+	page.run = Words(page, 0, page.y, PAGE_WIDTH, "")
+	page.y = page.y - LINE - 8
+	local width = math.floor((PAGE_WIDTH - CARD_GAP) / 2)
+	local top = page.y
+	local pickup = Panel(page, YELLOW, 0, top, width, "Pickup: bonuses multiply")
+	local one = Try(page, 12, top - 46, 170, "A bonus", 0, 1, 0.05, Signed, function(value) try.pickup = value end)
+	local two = Try(page, 12, top - 94, 170, "Another", 0, 1, 0.05, Signed, function(value) try.pickup2 = value end)
+	page.times = Words(pickup, 10, -132, width - 20, "")
+	page.added = Words(pickup, 10, -150, width - 20, "", SMALL + 1, { 0.8, 0.8, 0.8 })
+	Words(pickup, 10, -168, width - 20, "Two together give more than their sum.", SMALL + 1, { 0.8, 0.8, 0.8 })
+	local area = Panel(page, GREEN, width + CARD_GAP, top, width, "Area: wider and further")
+	local grow = Try(page, width + CARD_GAP + 12, top - 46, 150, "Area", 0, 2, 0.05, Signed, function(value) try.area = value end)
+	for _, slider in pairs({ one, two, grow }) do
+		slider:SetFrameLevel(pickup:GetFrameLevel() + 2)
+	end
+	page.radius = Words(area, 10, -84, 180, "")
+	page.ground = Words(area, 10, -102, 180, "")
+	page.circle = Words(area, 10, -128, 180, "", SMALL + 1)
+	page.reach = Words(area, 10, -146, 180, "", SMALL + 1)
+	page.soft = Words(area, 10, -164, 180, "", SMALL + 1, { 0.8, 0.8, 0.8 })
+	local wide = Disc(area, "ARTWORK", GREEN, 0.75)
+	local base = Disc(area, "OVERLAY", GREY, 0.9)
+	page.y = top - REACH_BOX - 8
+	Tip(page, "|cff73bfffEverything that speeds you up|r goes into one number, the speed rune too, and the cap holds.")
+	Tip(page, "|cff59f273Targets:|r every spell that picks its targets picks that many more. Only gear gives it, like the Rare set's +1.", 2)
+
+	function page.Draw()
+		speed.Read(try.speed)
+		one.Read(try.pickup)
+		two.Read(try.pickup2)
+		grow.Read(try.area)
+		local kept = math.min(try.speed, MOST_SPEED - 1)
+		local over = math.max(try.speed - (MOST_SPEED - 1), 0)
+		DrawWall(wall, kept / 2, over / 2, (MOST_SPEED - 1) / 2)
+		local gone = over > 0 and string.format("  |cffff7366%.0f points past the cap are lost.|r", over * 100) or ""
+		page.run:SetText(string.format("You run "..GOLD.."%.1f yards a second|r, x%.2f.%s", RUN * (1 + kept), 1 + kept, gone))
+		local times = PICKUP * (1 + try.pickup) * (1 + try.pickup2)
+		page.times:SetText(string.format("9 yd x %.2f x %.2f = "..GOLD.."%s|r", 1 + try.pickup, 1 + try.pickup2, Yards(times)))
+		page.added:SetText(string.format("Added up, they would make %s.", Yards(PICKUP * (1 + try.pickup + try.pickup2))))
+		local grown = 1 + try.area
+		page.radius:SetText(string.format("Every radius x "..GOLD.."%.2f|r", grown))
+		page.ground:SetText(string.format("Ground covered x "..GOLD.."%.2f|r", grown * grown))
+		page.circle:SetText(string.format("An 8 yd circle: %s", Yards(8 * grown)))
+		page.reach:SetText(string.format("A 30 yd reach: %s", Yards(Reach(30 * grown))))
+		page.soft:SetText(30 * grown > SOFT_REACH and "Slower past 70 yd." or "")
+		-- The widest circle the slider allows fills the room on the right.
+		local unit = DISC_MOST / 3
+		for _, each in pairs({ { wide, unit * grown }, { base, unit } }) do
+			each[1]:SetWidth(2 * each[2])
+			each[1]:SetHeight(2 * each[2])
+			each[1]:ClearAllPoints()
+			each[1]:SetPoint("CENTER", area, "TOPRIGHT", -DISC_MOST - 10, -REACH_BOX / 2 - 14)
+		end
 	end
 end
 
@@ -1575,9 +1882,11 @@ local PAGES = {
 	{ "Luck", "luck", BuildLuck },
 	{ "Damage", "damage", BuildDamage },
 	{ "Crit", "crit", BuildCrit },
+	{ "Haste", "haste", BuildHaste },
 	{ "DoTs", "dots", BuildDots },
 	{ "Not DoTs", "ground", BuildGround },
 	{ "Reduction", "armor", BuildArmor },
+	{ "Speed", "reach", BuildReach },
 	{ "Marks", "marks", BuildMarks },
 	{ "Sets", "sets", BuildSets },
 }

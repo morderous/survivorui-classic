@@ -14,7 +14,7 @@ What it gives:
   - While the boxes are up, a grid shows, its middle lines in gold. A box let go snaps to the grid, to the screen's edges and middle, and to the other boxes' edges and middles.
   - A place is kept from the point of the screen nearest the piece, so the layout keeps its shape at any interface size and any resolution: a piece in the middle stays in the middle, one by an edge stays by that edge.
   - The options give each piece its own size, and it grows from where it stands. The whole interface is at 80%, its size a slider in General.
-- **The Guide.** A gold ! on the minimap's rim opens pages that explain the game's numbers simply, with colors, sliders to try and your own hero's numbers: Luck, Damage, Crit, DoTs, the spells that look like DoTs and aren't, Damage Reduction, what your gear's stars cost in marks, and every class's sets. Everything in it was read from the game's executable, and more pages are coming.
+- **The Guide.** A gold ! on the minimap's rim opens pages that explain the game's numbers simply, with colors, sliders to try and your own hero's numbers: Luck, Damage, Crit, Haste and Echo, DoTs, the spells that look like DoTs and aren't, Damage Reduction, Speed, Pickup and Area, what your gear's stars cost in marks, and every class's sets. Everything in it was read from the game's executable, and more pages are coming.
 - **Health and mana in numbers.** The target frame shows an enemy's real health, `12.3k / 40.0k (31%)`, read from the game, and the mana in the same words. Each frame can show Off, Value, Percent or Both.
 - **Run tracker,** after a Mythic+ timer, in a panel as the others:
   - the zone, with its Heroic level or Endless;
@@ -89,6 +89,25 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.9, 2026-11-02
+
+Marks on the world itself with the game's 0.139.2, two new Guide pages, Haste and Speed, and the interface keeps the size you chose.
+
+**World markers** (a new tab in the options)
+- **Friends down:** in a co-op run, a gold cross over a friend who is down, with their name and how far.
+- **Caches:** the minimap's loot bag over each cache still there, and how far.
+- **Lairs:** the minimap's skull and the guardian's name over its lair while it sleeps. Awake, they follow the guardian out of its lair; slain, they go back over the lair with the time until the guardian comes back.
+- **Arrows:** for friends down, caches and lairs out of sight, an arrow on a ring round you toward the nearest few, with how far.
+- **Explosive orbs:** in a run with the Explosive affix, a pulsing mark over each orb.
+
+**The Guide**
+- **Haste:** every cooldown bonus is added into one number, and every wait is divided by 1 plus it. The game shows Haste as how much sooner, so its 50% already means twice as many spells, and 75% four times as many. There is no cap, but no spell comes back faster than 0.25 sec. **Echo** has no cap either: past 100% every spell strikes twice and the rest is the chance of a third, and each strike is a whole cast, aiming again and rolling its own Crit. Sliders for both, a spell's casts a minute in marbles, and the strikes of one cast.
+- **Speed:** Speed stops at +120%, 15.4 yards a second. Pickup bonuses multiply each other, so two give more than their sum. Area widens every radius and reach: +100% doubles the radius and covers four times the ground.
+
+**Fixed**
+- **The interface's size:** the game puts its own UI scale back a moment after the world loads, so SurvivorUI Classic came back larger than the size picked in its options. It now keeps your size.
+- **Haste's tooltip** on the character page: no spell comes back faster than 0.25 sec. It said each spell had a floor of its own.
 
 ### 0.2.8, 2026-11-02
 

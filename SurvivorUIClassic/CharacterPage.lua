@@ -19,7 +19,8 @@
 --   Crit starts at 5% and Crit Dmg at 200%; a hit under the chance is
 --     multiplied by Crit Dmg; past 100% the rest is added to Crit Dmg.
 --   Haste: every cooldown times 1 / (1 + the bonuses, added), which the game
---     shows as 1 minus that. Each spell has a shortest wait of its own.
+--     shows as 1 minus that. No wait under 0.25 sec (0.139, 0x145f2f3a0:
+--     Hellfire 0.5, Divine Shield its own).
 --   Luck: m = 1 + luck + the level's 1% (30% at most); the weights Common 60,
 --     Uncommon 25m, Rare 10m^2, Epic 4m^3, Legendary m^4, each card rolled on
 --     its own. Rings and trinkets as the cards ("Cards" here), amulets ("Neck")
@@ -253,7 +254,7 @@ end
 local function HasteWords(s)
 	local wait = tonumber(s.cd)
 	return string.format("\n\nCooldown = base / (1 + bonuses), the bonuses added: %s here, shown as %s. Spells come %.2f times as often. "
-		.."Each spell has a shortest wait of its own.", Signed(1 / wait - 1), Signed(1 - wait), 1 / wait)
+		.."No spell comes back faster than 0.25 sec.", Signed(1 / wait - 1), Signed(1 - wait), 1 / wait)
 end
 
 local MAIN = {

@@ -520,6 +520,19 @@ end }
 -- After General.
 table.insert(PAGES, 2, CARDS_PAGE)
 
+-- Marks on the world itself (WorldMarks.lua), last.
+table.insert(PAGES, { "World markers", "From the game's 0.139.2: marks drawn on the world itself, over what they point at, wherever the camera turns, with no nameplate. Only you see them.", function(page)
+	local function World(label, key, tip)
+		Check(page, label, function() return SUIC.WorldOn and SUIC.WorldOn(key) end,
+			function(on) if SUIC.SetWorld then SUIC.SetWorld(key, on) end end, tip)
+	end
+	World("Friends down", "worldDowned", "In a co-op run, a gold cross over a friend who is down, their name and how far.")
+	World("Caches", "worldCaches", "The minimap's loot bag over each cache still there, and how far.")
+	World("Lairs", "worldLairs", "The guardian's name over its lair while it sleeps; awake, over the guardian itself, following it; slain, back over the lair with the time until it comes back.")
+	World("Arrows", "worldArrows", "For friends down, caches and lairs out of sight: an arrow on a ring round you toward the nearest few, with how far.")
+	World("Explosive orbs", "worldOrbs", "In a run with the Explosive affix, a pulsing mark over each orb: only direct hits hurt them.")
+end })
+
 ------------------------------------------------------------------------------
 -- The tabs.
 

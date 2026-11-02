@@ -605,6 +605,10 @@ if UIParent_ManageFramePositions then
 end
 
 local again
+-- The game seats its own UI Scale on UIParent again after our start (seen
+-- the frame after PLAYER_ENTERING_WORLD on 0.139) and when the window
+-- changes: the interface's size is put back each time.
+local looked = 0
 local seat = CreateFrame("Frame")
 seat:RegisterEvent("PLAYER_ENTERING_WORLD")
 seat:SetScript("OnEvent", function()
@@ -617,6 +621,14 @@ seat:SetScript("OnUpdate", function()
 	if again and GetTime() >= again then
 		again = nil
 		SUIC.ApplyPositions()
+	end
+	if SUIC.active and not pending and GetTime() >= looked then
+		looked = GetTime() + 0.5
+		local size = SUIC.DB().uiSize or 0.8
+		if math.abs(UIParent:GetScale() - size) > 0.001 then
+			UIParent:SetScale(size)
+			SUIC.ApplyPositions()
+		end
 	end
 end)
 
