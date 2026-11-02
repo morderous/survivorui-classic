@@ -4,8 +4,10 @@
 -- tenths under ten ("8.5", "0.3"), in yellow, the end in red (its last two
 -- seconds, a short one's last second). A button
 -- cooling down is darkened under its count. Every cooldown counts, the
--- shortest too. OmniCC does the same job; with it installed, this stands
--- aside.
+-- shortest too. Off in the options' Action bar tab. OmniCC does the same job;
+-- with it installed, this stands aside.
+
+local counters = {}
 
 local function TimeText(seconds)
 	if seconds >= 60 then
@@ -54,7 +56,21 @@ local function Counter(parent, cooldown)
 	counter:SetScript("OnUpdate", CounterUpdate)
 	counter:Hide()
 	parent.suicCounter = counter
+	table.insert(counters, counter)
 	return counter
+end
+
+-- The option, at once: a count under way comes back where it stands.
+function SUIC.RefreshCooldowns()
+	local on = SUIC.DB().cooldownText
+	for index = 1, table.getn(counters) do
+		local counter = counters[index]
+		if on and counter.start and counter.start + counter.duration > GetTime() then
+			counter:Show()
+		else
+			counter:Hide()
+		end
+	end
 end
 
 SUIC.OnStart(function()
@@ -71,8 +87,11 @@ SUIC.OnStart(function()
 		local counter = Counter(parent, cooldown)
 		if start and start > 0 and duration and duration > 0 and enable and enable > 0 then
 			counter.start, counter.duration = start, duration
-			counter:Show()
+			if SUIC.DB().cooldownText then
+				counter:Show()
+			end
 		else
+			counter.start = nil
 			counter:Hide()
 		end
 	end

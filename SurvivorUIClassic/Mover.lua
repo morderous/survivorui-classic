@@ -117,6 +117,22 @@ local function Apply(piece)
 	end
 end
 
+-- A moved piece grown by `change` in height keeps its top where it is: a place
+-- held by its bottom or its middle goes by what that takes.
+function SUIC.KeepTop(key, change)
+	local place, piece = Places()[key], byKey[key]
+	if not (place and place.point and piece) then
+		return
+	end
+	local own = place.own or place.point
+	if string.find(own, "BOTTOM", 1, true) then
+		place.y = place.y - change
+	elseif not string.find(own, "TOP", 1, true) then
+		place.y = place.y - change / 2
+	end
+	Apply(piece)
+end
+
 -- Its size: the one it came with times the one chosen (or its first). One
 -- never sized keeps whatever the game gives it.
 local function ApplySize(piece)

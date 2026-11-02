@@ -62,6 +62,64 @@ local function Record(ability, amount, crit)
 	end
 end
 
+-- The game's own feed of the hero's hits, each saying its meter line (its
+-- 0.139), kept a second for the combat log's line to find it.
+local hits = {}
+local cursor
+
+local function ReadHits()
+	local result = AZS_GetCombatTextEvents(cursor, 256)
+	if not result then
+		cursor = nil
+		return
+	end
+	cursor = result.cursor
+	local now = GetTime()
+	local events = result.events or {}
+	for index = 1, table.getn(events) do
+		local hit = events[index]
+		if hit.kind == "damage" and hit.meterSource then
+			table.insert(hits, { at = now, amount = hit.amount, crit = hit.critical, ability = hit.abilityName,
+				meter = hit.meterSource, key = hit.meterSourceKey })
+		end
+	end
+	while hits[1] and now - hits[1].at > 1 do
+		table.remove(hits, 1)
+	end
+end
+
+-- The meter's line for a line of the combat log, when it is not the spell the
+-- line names: a Flametongue Weapon's Fire Nova, a demon's own spell. Nil for the
+-- spell itself and for a hit not found: by its amount and crit, the same spell's
+-- first.
+function SUIC.HitLine(name, line)
+	if not AZS_GetCombatTextEvents then
+		return nil
+	end
+	local _, _, amount = string.find(line, " for (%d+)")
+	amount = tonumber(amount)
+	if not amount then
+		return nil
+	end
+	ReadHits()
+	local crit = string.find(line, " crit", 1, true) ~= nil
+	local found
+	for index = table.getn(hits), 1, -1 do
+		local hit = hits[index]
+		if hit.amount == amount and (not hit.crit) == (not crit) then
+			found = found or hit
+			if hit.ability == name then
+				found = hit
+				break
+			end
+		end
+	end
+	if not found or found.meter == found.ability or found.meter == SUIC.MeterName(found.key) then
+		return nil
+	end
+	return found.meter
+end
+
 local function Note(message)
 	local crit = string.find(message, " crit", 1, true)
 	if not crit and not string.find(message, " hit", 1, true) then
@@ -69,7 +127,7 @@ local function Note(message)
 	end
 	local ability, amount = Read(message, crit and CRIT or HIT)
 	if ability and amount then
-		Record(ability, amount, crit)
+		Record(SUIC.HitLine(ability, message) or ability, amount, crit)
 	end
 end
 

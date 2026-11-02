@@ -265,6 +265,8 @@ end }
 
 PAGES[2] = { "Action bar", "The game's action bar, its experience bar on top.", function(page)
 	Size(page, "Size", "bar")
+	Setting(page, "Cooldown text on the action bar", "cooldownText", "RefreshCooldowns",
+		"The seconds left on each button, the button darkened under them. OmniCC, when installed, does it instead.")
 	Reset(page, { "bar" })
 end }
 
@@ -287,7 +289,33 @@ PAGES[4] = { "Minimap", "The minimap with its zone name and its buttons.", funct
 	Setting(page, "Caches and lairs on the minimap", "mapPins", "RefreshMapPins",
 		"A chest for every cache, a red flag for every guardian's lair (faint when empty, beating while it fights), in place of the game's one flag.")
 	Setting(page, "A border round the clock", "clockFrame", "RefreshClock",
-		"The panels' border round the game's clock under the minimap.")
+		"The panels' border round the clock under the minimap.")
+	-- The clock's time (Clock.lua). The computer's ticked, the slider has no say.
+	if AZS_GetLocalTime then
+		local zone
+		local function Lock()
+			local free = SUIC.DB().clockZone ~= nil
+			zone:EnableMouse(free)
+			zone:SetAlpha(free and 1 or 0.45)
+		end
+		Check(page, "Your computer's time", function() return SUIC.DB().clockZone == nil end, function(on)
+			SUIC.DB().clockZone = not on and SUIC.TimeZoneNow() or nil
+			SUIC.RefreshClock()
+			zone.reading = true
+			zone:SetValue(SUIC.TimeZoneNow())
+			zone.reading = nil
+			Lock()
+		end, "The game's own clock. Untick it for the time zone under it: a clock of this addon takes the game's place.")
+		zone = Slider(page, "Time zone", -12, 14, 0.5, SUIC.TimeZoneNow, function(value)
+			SUIC.DB().clockZone = value
+			SUIC.RefreshClock()
+		end, SUIC.ZoneLabel)
+		Updates(page, Lock)
+		Check(page, "24-hour clock", SUIC.Clock24, function(on)
+			SUIC.DB().clock24 = on
+			SUIC.RefreshClock()
+		end, "Ticked 24 hours, unticked 12. Where the game's clock shows the other, a clock of this addon takes its place.")
+	end
 	Reset(page, { "minimap" })
 end }
 
@@ -331,7 +359,7 @@ PAGES[9] = { "Damage meter", "Damage done, healing, the last boss fight and the 
 	Setting(page, "Show the damage meter", "meter", "RefreshMeter")
 	Size(page, "Size", "meter")
 	Slider(page, "Lines", 3, 15, 1, function() return tonumber(SUIC.DB().meterLines) or SUIC.Default("meterLines") end, function(value)
-		SUIC.DB().meterLines = value
+		SUIC.SetMeterLines(value)
 	end, function(value) return tostring(value) end)
 	local sizes = {}
 	for size = 8, 14 do
@@ -559,10 +587,15 @@ if otherReason ~= "MISSING" then
 	change:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
--- A tab by its number (the tests' driver opens each one).
+-- A tab by its number (the tests' driver opens each one) or its name.
 function SUIC.OptionsTab(index)
 	if not window:IsShown() then
 		window:Show()
+	end
+	for each = 1, table.getn(PAGES) do
+		if PAGES[each][1] == index then
+			index = each
+		end
 	end
 	Select(index)
 end

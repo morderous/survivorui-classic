@@ -60,6 +60,7 @@ local DEFAULTS = {
 	mapPins = true,            -- the caches and the lairs on the minimap (MapPins.lua)
 	clockFrame = true,         -- a border round the game's clock under it (Clock.lua)
 	fps = true,                -- the frames a second, in the screen's corner (Fps.lua)
+	cooldownText = true,       -- the numbers on the action buttons (Cooldowns.lua)
 	lootLog = true,            -- the loot notices (Loot.lua)
 	summons = true,            -- the summons and totems (Summons.lua)
 	talentTimers = true,       -- the talents' clocks (TalentTimers.lua)
@@ -344,6 +345,12 @@ SUIC.OnStart(function()
 			if AZS_HUD_CVARS[part] and not AZS_IsHudShown(part) then
 				AZS_SetHudShown(part, true)
 			end
+		end
+		-- The game's clock too, this addon's clock, if it was Survivor UI that
+		-- put it away: the player can turn it off in the game's options.
+		if AZS_HUD_CVARS.localClock and SurvivorUIDB and SurvivorUIDB.hidGameLocalClock then
+			AZS_SetHudShown("localClock", true)
+			SurvivorUIDB.hidGameLocalClock = nil
 		end
 	end
 end)

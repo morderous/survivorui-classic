@@ -302,18 +302,20 @@ end
 
 -- The name a hit's source goes by in the meter: "Your Fireball" is Fireball,
 -- "You" Melee, a pet its own name; the Searing Totem's shots come as a Fire
--- "Attack", Call of Flame's blast as a Fire Nova.
+-- "Attack".
 local function SourceOf(who, line)
 	local _, _, spell = string.find(who or "", "^Your (.+)$")
 	local name = spell or (who == "You" and "Melee") or who
+	local exact = SUIC.HitLine and SUIC.HitLine(name, line)
+	if exact then
+		return InPets(exact) and "Pets" or exact
+	end
 	local _, _, owner = string.find(name, "^(.+)'s ")
 	if not spell and InPets(owner or name) then
 		return "Pets"
 	end
 	if name == "Attack" and string.find(line, " Fire damage", 1, true) and Holds("searing_totem") then
 		return "Searing Totem"
-	elseif name == "Fire Nova" and Holds("call_of_flame") and not Holds("fire_nova") then
-		return "Call of Flame"
 	end
 	local cast = PET_CASTS[name]
 	if cast and not Holds(cast[1]) then

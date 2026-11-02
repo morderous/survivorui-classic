@@ -148,6 +148,7 @@ function SUIC.Dialog(name, title, width, height)
 	local heading = window:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	heading:SetPoint("TOP", header, "TOP", 0, -14)
 	heading:SetText(title)
+	window.heading = heading
 	local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
 	close:SetPoint("TOPRIGHT", window, "TOPRIGHT", -6, -6)
 	return window

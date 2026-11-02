@@ -45,7 +45,7 @@ local RANGED = { ["Auto Shot"] = true, ["Shoot"] = true, ["Shot"] = true, ["Auto
 
 local SPELL_KEYS = {
 	["shadow word: pain"] = "sw_pain", ["power word: shield"] = "pw_shield",
-	["demoralizing shout"] = "demo_shout", ["hunter's mark"] = "hunters_mark",
+	["demoralizing shout"] = "demo_shout", ["hunter's mark"] = "hunters_mark", ["rockbiter weapon"] = "rockbiter",
 	["soulfire"] = "soul_fire",
 }
 
@@ -132,6 +132,42 @@ end
 
 local known, missedAt = {}, {}
 
+-- The run's sources as the game's meter has them (its 0.132), in the game's
+-- language: by key and by name. Read again now and then, as a card brings more.
+local sources = { byKey = {}, byName = {} }
+local sourcesAt = 0
+
+local function Sources()
+	local now = GetTime()
+	if now - sourcesAt >= 5 and AZS_GetMeterContext and AZS_GetMeterLoadout then
+		sourcesAt = now
+		local context = AZS_GetMeterContext()
+		local loadout = context and context.runId
+			and AZS_GetMeterLoadout({ apiVersion = 1, runId = context.runId, ownerId = context.localOwnerId })
+		if loadout and loadout.sources then
+			sources = { byKey = loadout.sources, byName = {} }
+			for _, source in pairs(loadout.sources) do
+				if source.name then
+					sources.byName[source.name] = source
+				end
+			end
+		end
+	end
+	return sources
+end
+
+-- Whether the meter's line of this name is a talent's.
+function SUIC.MeterTalent(name)
+	local source = Sources().byName[name]
+	return source ~= nil and source.kind == "talent"
+end
+
+-- The name the meter gives a source key's own spell, if it knows it.
+function SUIC.MeterName(key)
+	local source = Sources().byKey[key]
+	return source and source.name
+end
+
 function SUIC.IconOf(name)
 	if not name or name == "" then
 		return QUESTION
@@ -155,6 +191,11 @@ function SUIC.IconOf(name)
 		return texture
 	end
 	if known[name] then
+		return known[name]
+	end
+	local source = Sources().byName[name]
+	if source and source.icon and source.icon.path then
+		known[name] = source.icon.path
 		return known[name]
 	end
 	if missedAt[name] and GetTime() - missedAt[name] < 10 then

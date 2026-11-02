@@ -9,8 +9,9 @@
 -- It stands in for the game's one red flag, put away while these are on.
 --
 -- The game shares every cache (AZS_CHESTS) and every lair (AZS_GetLairs) with
--- its place in the world, in yards, and the hero's (AZS_RUN px, py); the pins
--- go by those (Survivor UI's MapPins.lua, the same reckoning).
+-- its place in the world, in yards, and the hero's (AZS_GetPlayerPosition, else
+-- AZS_RUN px, py); the pins go by those (Survivor UI's MapPins.lua, the same
+-- reckoning).
 
 local ART = "Interface\\AddOns\\SurvivorUIClassic\\Art\\"
 local CHEST = ART.."PinCache"
@@ -103,10 +104,20 @@ local function Num(value)
 	return tonumber(value)
 end
 
+-- The hero's place: the game's live one (its 0.132), in dungeons and raids too;
+-- else the px and py it sends a few times a second.
+local function Hero(run)
+	local place = AZS_GetPlayerPosition and AZS_GetPlayerPosition()
+	if place then
+		return place.x, place.y
+	end
+	return Num(run.px), Num(run.py)
+end
+
 local function Draw()
 	local shown = 0
 	local run = AZS_RUN or {}
-	local px, py = Num(run.px), Num(run.py)
+	local px, py = Hero(run)
 	if SUIC.InRun() and px and py then
 		local radius = Minimap:GetWidth() / 2
 		local perYard = 2 * radius / Yards()

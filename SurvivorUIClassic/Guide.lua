@@ -32,7 +32,7 @@
 --     only then shields. Past the cap, lost but for Unbreakable; Defiance reads
 --     the reduction after the cap.
 
-local WIDTH, HEIGHT = 770, 560
+local WIDTH, HEIGHT = 770, 584
 local LEFT = 130                -- the pages' left edge, past the tabs
 local PAGE_WIDTH = WIDTH - LEFT - 26
 local PAGE_TOP = -36
@@ -122,6 +122,7 @@ local OTHER_TALENTS = {
 	{ "Unyielding Faith", "Spell_Holy_UnyieldingFaith", "PALADIN", "Paladin talent, 3 ranks", "talent", "Reduces all damage taken by 1.2% a rank: 3.6% at 3 ranks." },
 	{ "Unbreakable Will", "Spell_Magic_MageArmor", "PRIEST", "Priest talent, 5 ranks", "talent", "Reduces all damage taken by 0.8% a rank: 4% at 5 ranks." },
 	{ "Elemental Warding", "Spell_Nature_StoneClawTotem", "SHAMAN", "Shaman talent, 3 ranks", "talent", "Reduces all damage taken by 2% a rank: 6% at 3 ranks." },
+	{ "Stormguard", "Spell_Nature_LightningShield", "SHAMAN", "Shaman talent, 5 ranks", "talent", "While Lightning Shield is active, reduces all damage taken by 3% a rank: 15% at 5 ranks." },
 	{ "Arcane Fortitude", "Spell_Arcane_ArcaneResilience", "MAGE", "Mage talent, 3 ranks", "talent", "Reduces all damage taken by 2.5% a rank: 7.5% at 3 ranks." },
 	{ "Rake", "Ability_Druid_Disembowel", "DRUID", "Druid milestone", "talent", "Your hide thickens: 8% less damage taken and 20% more maximum health." },
 	{ "Dire Bear Form", "Ability_Racial_BearForm", "DRUID", "Druid capstone", "talent", "You fight in Dire Bear Form: 10% less damage taken and 25% more maximum health." },
@@ -912,7 +913,8 @@ local function Chips(page, list)
 		chip:EnableMouse(true)
 		chip:SetScript("OnEnter", ChipEnter)
 		chip:SetScript("OnLeave", ChipLeave)
-		chip.fill = chip:CreateTexture(nil, "BACKGROUND")
+		-- Over the panel's ground: on the same layer the two can land either way.
+		chip.fill = chip:CreateTexture(nil, "BORDER")
 		chip.fill:SetTexture(SUIC.FLAT)
 		chip.fill:SetPoint("TOPLEFT", chip, "TOPLEFT", 3, -3)
 		chip.fill:SetPoint("BOTTOMRIGHT", chip, "BOTTOMRIGHT", -3, 3)
@@ -927,7 +929,7 @@ local function Chips(page, list)
 		name:SetPoint("LEFT", icon, "RIGHT", 4, 0)
 		name:SetText(spell[1])
 	end
-	page.y = page.y - 2 * (CHIP_HEIGHT + CHIP_GAP)
+	page.y = page.y - math.ceil(table.getn(list) / 4) * (CHIP_HEIGHT + CHIP_GAP)
 end
 
 local function BuildArmor(page)
@@ -1036,15 +1038,32 @@ divider:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", LEFT - 12, 36)
 local back = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
 back:SetWidth(84)
 back:SetHeight(22)
-back:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -112, 18)
-back:SetText("Back")
+back:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", LEFT, 14)
+back:SetText("Previous")
 local forward = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
 forward:SetWidth(84)
 forward:SetHeight(22)
-forward:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -22, 18)
+forward:SetPoint("LEFT", back, "RIGHT", 6, 0)
 forward:SetText("Next")
-local turned = SUIC.Text(window, "GameFontDisableSmall")
-turned:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", LEFT, 24)
+-- Close in the foot's right corner, its art greyed and tinted to stand apart
+-- from the pages' two.
+local shut = CreateFrame("Button", "SUICGuideClose", window, "UIPanelButtonTemplate")
+shut:SetWidth(84)
+shut:SetHeight(22)
+shut:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -18, 14)
+shut:SetText("Close")
+shut:SetScript("OnClick", function() window:Hide() end)
+for _, part in pairs({ "Left", "Middle", "Right" }) do
+	local art = getglobal("SUICGuideClose"..part)
+	if art and art.SetDesaturated then
+		art:SetDesaturated(1)
+		art:SetVertexColor(0.55, 0.7, 1)
+	end
+end
+-- The page's number beside the title, small and grey, the two together in the
+-- middle.
+local numbered = SUIC.Text(window, "GameFontDisableSmall")
+numbered:SetPoint("LEFT", window.heading, "RIGHT", 5, 0)
 
 local function Unread()
 	local read = SUIC.DB().guideRead
@@ -1089,7 +1108,9 @@ local function Select(index)
 	local page = Build(index)
 	page:Show()
 	page.Draw()
-	turned:SetText("Page "..index.." of "..table.getn(PAGES))
+	numbered:SetText("(page "..index.." of "..table.getn(PAGES)..")")
+	local point, relative, relativePoint, _, y = window.heading:GetPoint(1)
+	window.heading:SetPoint(point, relative, relativePoint, -(numbered:GetStringWidth() + 5) / 2, y)
 	if index > 1 then
 		back:Enable()
 	else
@@ -1174,6 +1195,9 @@ button:SetScript("OnEnter", function()
 end)
 button:SetScript("OnClick", function()
 	GameTooltip:Hide()
+	if SUICGuideHint then
+		SUICGuideHint:Hide()
+	end
 	SUIC.ToggleGuide()
 end)
 
@@ -1187,6 +1211,75 @@ function SUIC.RefreshGuideButton()
 	end
 end
 
+-- A note beside the button, once for each player, some seconds into their
+-- first run with it: small, its edge breathing in gold. A click opens the
+-- guide; it goes by itself after a while.
+local HINT_DELAY, HINT_SECONDS = 5, 25
+
+local function MakeHint()
+	local hint = CreateFrame("Button", "SUICGuideHint", UIParent)
+	hint:SetFrameStrata("HIGH")
+	hint:SetHeight(36)
+	SUIC.Framed(hint)
+	local title = SUIC.Text(hint, "GameFontNormalSmall")
+	title:SetPoint("TOPLEFT", hint, "TOPLEFT", 9, -7)
+	title:SetText("Questions about a mechanic?")
+	local line = SUIC.Text(hint, "GameFontHighlightSmall", 9)
+	line:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
+	line:SetText("Click: the guide explains it")
+	hint:SetWidth(math.max(title:GetStringWidth(), line:GetStringWidth()) + 30)
+	local close = CreateFrame("Button", nil, hint)
+	close:SetWidth(14)
+	close:SetHeight(14)
+	close:SetPoint("TOPRIGHT", hint, "TOPRIGHT", -2, -2)
+	local mark = SUIC.Text(close, "GameFontHighlightSmall")
+	mark:SetPoint("CENTER", close, "CENTER", 0, 0)
+	mark:SetText("x")
+	close:SetScript("OnClick", function() hint:Hide() end)
+	hint:SetScript("OnClick", function()
+		this:Hide()
+		SUIC.ToggleGuide()
+	end)
+	hint.age = 0
+	hint:SetScript("OnUpdate", function()
+		this.age = this.age + arg1
+		local left = HINT_SECONDS - this.age
+		if left <= 0 or (AZS_GetPhase and AZS_GetPhase() == "choosing") then
+			this:Hide()
+		else
+			this:SetAlpha(math.min(1, this.age * 3, left * 3))
+			this:SetBackdropBorderColor(1, 0.82, 0.2, 0.65 + 0.35 * math.sin(this.age * 4))
+		end
+	end)
+	return hint
+end
+
+local function WatchForHint()
+	local watch = CreateFrame("Frame")
+	local wait, played = 0, 0
+	watch:SetScript("OnUpdate", function()
+		wait = wait + arg1
+		if wait < 1 then
+			return
+		end
+		wait = 0
+		if SUIC.DB().guideHintSeen then
+			this:SetScript("OnUpdate", nil)
+			return
+		end
+		if not (button:IsVisible() and AZS_GetPhase and AZS_GetPhase() == "playing") then
+			return
+		end
+		played = played + 1
+		if played >= HINT_DELAY then
+			SUIC.DB().guideHintSeen = true
+			local hint = MakeHint()
+			hint:SetPoint("RIGHT", button, "LEFT", -6, 0)
+			hint:Show()
+		end
+	end)
+end
+
 SUIC.OnStart(function()
 	for index = 1, table.getn(PAGES) do
 		if SUIC.DB().guideRead[PAGES[index][2]] then
@@ -1194,4 +1287,5 @@ SUIC.OnStart(function()
 		end
 	end
 	SUIC.RefreshGuideButton()
+	WatchForHint()
 end)

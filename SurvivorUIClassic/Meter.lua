@@ -4,7 +4,8 @@
 -- the page's number and the share. Its title picks the page: Damage Done, DPS,
 -- Healing, the last boss fight's damage, or the party's heroes; those last
 -- three with the damage or healing a second as well.
--- Hover a line for its numbers. It grows with its lines, up to the most set.
+-- Hover a line for its numbers. It stands as tall as the lines set; those that
+-- do not fit roll by the wheel or the scroll bar at its right.
 -- The arrow beside the title, Reset, starts Damage Done and DPS over from
 -- that moment; a new run starts them over by itself.
 --
@@ -29,6 +30,9 @@ local RATE_COLUMN = 34
 local AMOUNT_COLUMN = 38
 local TOP = SUIC.TITLE + 4
 local MOST = 15
+-- The scroll bar, in line with the title's rule; the lines give it this much
+-- of their width while it shows.
+local ROLL_WIDTH, ROLL_ROOM = 7, 7
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local MODES = {
@@ -203,19 +207,22 @@ function SUIC.ApplyMeterFont()
 end
 
 -- The columns of a page: the second only where it has one. The name has the
--- rest, on one line: a text given a width would break in two.
-local arranged
-local function Arrange(mode)
-	if arranged == mode then
+-- rest, on one line: a text given a width would break in two. With the scroll
+-- bar there, the lines leave it room.
+local arranged, arrangedRolling
+local function Arrange(mode, rolling)
+	if arranged == mode and arrangedRolling == rolling then
 		return
 	end
-	arranged = mode
+	arranged, arrangedRolling = mode, rolling
 	local columns = SHARE_COLUMN + AMOUNT_COLUMN + (mode.three and RATE_COLUMN or 0)
+	local room = rolling and ROLL_ROOM or 0
 	for index = 1, MOST do
 		local line = lines[index]
+		line:SetWidth(W - 2 * PAD - LINE - 3 - room)
 		line.amount:ClearAllPoints()
 		line.amount:SetPoint("CENTER", line, "RIGHT", AMOUNT_COLUMN / 2 - columns, 0)
-		line.room = W - 2 * PAD - LINE - 8 - columns
+		line.room = W - 2 * PAD - LINE - 8 - columns - room
 		line.said = nil
 		if mode.three then
 			line.rate:Show()
@@ -376,7 +383,7 @@ local function Tag(entry)
 		return ""
 	elseif NECKS[name] or string.find(name, ": ", 1, true) then
 		return " |cffd0d0d0(neck)|r"
-	elseif SUIC_TALENT_ICONS and SUIC_TALENT_ICONS[name] then
+	elseif (SUIC_TALENT_ICONS and SUIC_TALENT_ICONS[name]) or SUIC.MeterTalent(name) then
 		return " |cffd0d0d0(talent)|r"
 	end
 	return " |cffd0d0d0(proc)|r"
@@ -442,9 +449,8 @@ local function Room()
 end
 
 -- With the fold on, the lines under the share folded into one, Others, at
--- the bottom (the party's heroes stay each on their own); and past the lines
--- that fit, the rest folded there too.
-local function Folded(data, mode, most)
+-- the bottom (the party's heroes stay each on their own).
+local function Folded(data, mode)
 	if not SUIC.DB().meterFold or mode.key == "party" then
 		return data
 	end
@@ -452,7 +458,7 @@ local function Folded(data, mode, most)
 	local kept, others = {}, {}
 	for index = 1, table.getn(data) do
 		local entry = data[index]
-		if (tonumber(entry.share) or 0) < under or table.getn(kept) >= most - 1 then
+		if (tonumber(entry.share) or 0) < under then
 			table.insert(others, entry)
 		else
 			table.insert(kept, entry)
@@ -472,6 +478,45 @@ local function Folded(data, mode, most)
 	return kept
 end
 
+-- The scroll bar: there while the lines do not all fit, the thumb as long as
+-- the share of them that shows.
+local roll = CreateFrame("Slider", nil, panel)
+roll:SetOrientation("VERTICAL")
+roll:SetWidth(ROLL_WIDTH)
+roll:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -6, -TOP - 1)
+roll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -6, 6)
+roll:SetFrameLevel(panel:GetFrameLevel() + 8)
+roll:SetMinMaxValues(0, 1)
+roll:SetValueStep(1)
+roll:EnableMouse(true)
+roll:EnableMouseWheel(true)
+local track = roll:CreateTexture(nil, "BACKGROUND")
+track:SetTexture(SUIC.FLAT)
+track:SetVertexColor(0, 0, 0, 0.5)
+track:SetAllPoints(roll)
+local thumb = roll:CreateTexture(nil, "OVERLAY")
+thumb:SetTexture(SUIC.FLAT)
+thumb:SetVertexColor(0.55, 0.55, 0.55, 1)
+thumb:SetWidth(ROLL_WIDTH - 2)
+thumb:SetHeight(16)
+roll:SetThumbTexture(thumb)
+roll:SetScript("OnEnter", function() thumb:SetVertexColor(0.9, 0.82, 0.5, 1) end)
+roll:SetScript("OnLeave", function() thumb:SetVertexColor(0.55, 0.55, 0.55, 1) end)
+roll:Hide()
+
+local function ShowRoll(skip, most, shown)
+	if most == 0 then
+		roll:Hide()
+		return
+	end
+	roll.quiet = true
+	roll:SetMinMaxValues(0, most)
+	roll:SetValue(skip)
+	roll.quiet = nil
+	thumb:SetHeight(math.max(14, math.floor(shown * STEP * shown / (shown + most))))
+	roll:Show()
+end
+
 local function Draw()
 	PaintFold()
 	local mode = Mode()
@@ -480,7 +525,6 @@ local function Draw()
 	else
 		reset:Hide()
 	end
-	Arrange(mode)
 	local data, sum, perSecond = Data(mode)
 	data = data or {}
 	panel.title:SetText(mode.name)
@@ -501,11 +545,17 @@ local function Draw()
 	end
 	local most = math.min(MOST, tonumber(SUIC.DB().meterLines) or SUIC.Default("meterLines"), Room())
 	local top = data[1] and (tonumber(data[1].dmg) or 0) or 0
-	data = Folded(data, mode, most)
+	data = Folded(data, mode)
+	-- Rolled down, the first lines out of sight and as many more in at the
+	-- bottom, never past the last; the bars keep the top line's measure.
+	panel.most = math.max(0, table.getn(data) - most)
+	local skip = math.min(panel.scrolled or 0, panel.most)
+	Arrange(mode, panel.most > 0)
+	ShowRoll(skip, panel.most, most)
 	for index = 1, MOST do
-		local entry = data[index]
+		local entry = data[index + skip]
 		if entry and index <= most then
-			Fill(lines[index], entry, index, top, mode)
+			Fill(lines[index], entry, index + skip, top, mode)
 		else
 			lines[index].entry = nil
 			lines[index]:Hide()
@@ -515,12 +565,48 @@ local function Draw()
 	panel:SetHeight(TOP + most * STEP + 4)
 end
 
+-- The lines set (the options' Damage meter tab): moved, its title stays where
+-- it is and the bottom edge goes.
+function SUIC.SetMeterLines(value)
+	local db = SUIC.DB()
+	local old = tonumber(db.meterLines) or SUIC.Default("meterLines")
+	db.meterLines = value
+	SUIC.KeepTop("meter", (value - old) * STEP)
+	Draw()
+end
+
+-- The line under the mouse now holds another source: its numbers closed, open
+-- again on the next line the mouse goes to.
+local function Roll(to)
+	panel.scrolled = math.max(0, math.min(panel.most or 0, to))
+	Draw()
+	GameTooltip:Hide()
+end
+
+local function Wheel()
+	Roll(math.min(panel.scrolled or 0, panel.most or 0) - (arg1 or 0))
+end
+
+roll:SetScript("OnValueChanged", function()
+	if not this.quiet then
+		Roll(math.floor(this:GetValue() + 0.5))
+	end
+end)
+roll:SetScript("OnMouseWheel", Wheel)
+panel:EnableMouseWheel(true)
+panel:SetScript("OnMouseWheel", Wheel)
+for index = 1, MOST do
+	lines[index]:EnableMouseWheel(true)
+	lines[index]:SetScript("OnMouseWheel", Wheel)
+end
+
 ------------------------------------------------------------------------------
 -- The page, from the title's menu.
 
 local menu = CreateFrame("Frame", "SUICMeterMenu", UIParent, "UIDropDownMenuTemplate")
 local function PickMode(key)
 	SUIC.DB().meterMode = key
+	panel.scrolled = 0
 	Draw()
 end
 local function MenuInit()

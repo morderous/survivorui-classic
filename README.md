@@ -31,9 +31,9 @@ What it gives:
 - **Caches and lairs on the minimap**: loot bags for every cache, a skull for every guardian's lair (beating while it fights, faint with a green check while empty), in place of the game's one flag.
 - **The character page in one panel**, in the look of the others: the item slots at both sides, the hero between them, turned by holding the mouse on it and pulling, at the hero's left the odds your luck gives on the cards and the necks, at the right Damage, Crit and Crit Dmg, each hovered for its formula with your numbers in it, and under the hero the other numbers in four small panels by kind (Bonus, Utility, Defense, Offense), the game's Run Stats box folded in. The hero's name in the class's color. The options' Character panel tab picks this page or the game's own, no changes.
 - **Loot notices** and the **Level Up! button**, as the game's but movable, the button with its key on it.
-- **Frames a second** in the screen's bottom left corner, and **a border round the game's clock** under the minimap.
+- **Frames a second** in the screen's bottom left corner, and **a border round the game's clock** under the minimap. Hover it for your choices: your computer's time or any time zone, 24 or 12 hours.
 - **The whole interface's size**, in the options' General tab.
-- **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, its number and share; the lines under 10% folded into Others (the button by its title), Reset to count Damage Done and DPS from now on (the arrow beside it), as tall as the lines you set, in the font size you set.
+- **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, its number and share; the lines under 10% folded into Others (the button by its title), Reset to count Damage Done and DPS from now on (the arrow beside it), as tall as the lines you set, a scroll bar for the rest, in the font size you set.
 - **Build list.** Your Damage, Crit and Crit Dmg in its title; your six spell slots, filled or empty, by rank, the highest first, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart. Hover a biggest crit for that spell's crits and hits this run.
 - **Jewelry.** The neck, rings and trinkets you wear this run, and what each one gives.
 - **Combat text in Barlow.** The damage you deal and the damage you take, in Barlow Condensed, each at 30 to 100% of its size, or turned off altogether.
@@ -89,6 +89,31 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.7, 2026-11-01
+
+A switch for the cooldown text, exact crits on the build list, a damage meter that scrolls and a clock your way.
+
+**New**
+- **Cooldown text is your choice:** **Cooldown text on the action bar**, in the options' Action bar tab, turns the numbers on the buttons on or off, with the dark over them.
+- **The damage meter scrolls:** with more to show than the lines you set, a scroll bar comes up at its right: drag it, click it or use the wheel, so the meter can stay short. Only the small lines fold into Others now: the rest no longer go there for lack of room.
+- **Your time, your way:** hover the clock under the minimap to see what a click does: it opens the options' Minimap tab, with **Your computer's time** to tick, or untick for a slider to any time zone you want, and **24-hour clock** to tick for 24 hours or untick for 12. The game's clock has neither, so a clock of this addon takes its place, in the same spot, only when you ask for what it cannot show.
+
+**The game's new data**
+- **Each hit where it belongs** (the game's 0.139): the game now says which meter line each hit counts toward, so a proc that borrows a spell, like Flametongue Weapon's Fire Nova, no longer adds to that spell's crits on the build list, and Survivor UI's numbers name it right.
+- **Talent icons in every language:** with the game in another language, a talent's line on the damage meter shows its icon and its tag.
+- **The minimap's pins follow you live** (the game's 0.132), in dungeons and raids too. They used to jump about once a second.
+- **The new Enhancement Shaman** (the game's 0.134 to 0.137): the new talents and Rockbiter Weapon have their icons, and Call of Flame is out, as the Shaman no longer has that spell.
+
+**The Guide**
+- **A word from the Guide:** the first time you play with this version, a small card beside the Guide's button says it is there. It shows once, and never again.
+- **The Guide's Reduction page:** Stormguard, the new Shaman talent, joins the talents that add to the number, with its tooltip.
+- **The Guide's buttons:** the page's number beside the title, Previous and Next at the foot of the page, and a Close button of its own color in the bottom right corner, in a slightly taller window.
+- **The Guide's chips:** a chip could lose its class's color and show only the border, as the Paladin's did.
+
+**Fixed**
+- **The clock's border goes with the clock:** closed with its X, the minimap left the border alone on the screen, and it now goes too when you turn the clock off in the game's options (its 0.136, Show Local Clock).
+- **From Survivor UI to this addon, the game's clock comes back:** Survivor UI puts it away for its own.
 
 ### 0.2.6, 2026-10-31
 
