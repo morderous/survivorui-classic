@@ -14,7 +14,7 @@ What it gives:
   - While the boxes are up, a grid shows, its middle lines in gold. A box let go snaps to the grid, to the screen's edges and middle, and to the other boxes' edges and middles.
   - A place is kept from the point of the screen nearest the piece, so the layout keeps its shape at any interface size and any resolution: a piece in the middle stays in the middle, one by an edge stays by that edge.
   - The options give each piece its own size, and it grows from where it stands. The whole interface is at 80%, its size a slider in General.
-- **The Guide.** A gold ! on the minimap's rim opens pages that explain the game's numbers simply, with colors, sliders to try and your own hero's numbers: Luck, Damage, Crit, DoTs, the spells that look like DoTs and aren't, and Damage Reduction. Everything in it was read from the game's executable, and more pages are coming.
+- **The Guide.** A gold ! on the minimap's rim opens pages that explain the game's numbers simply, with colors, sliders to try and your own hero's numbers: Luck, Damage, Crit, DoTs, the spells that look like DoTs and aren't, Damage Reduction, what your gear's stars cost in marks, and every class's sets. Everything in it was read from the game's executable, and more pages are coming.
 - **Health and mana in numbers.** The target frame shows an enemy's real health, `12.3k / 40.0k (31%)`, read from the game, and the mana in the same words. Each frame can show Off, Value, Percent or Both.
 - **Run tracker,** after a Mythic+ timer, in a panel as the others:
   - the zone, with its Heroic level or Endless;
@@ -89,6 +89,19 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.8, 2026-11-02
+
+Two new Guide pages on your gear, Marks and Sets, and the level's cards come clean.
+
+**The Guide**
+- **Marks:** what each star of a piece costs, rarity by rarity, and what all 8 pieces cost to 3 and to 5 stars. **Other classes done** sets how many of your other classes have that set done: each takes 5% off, up to 40%, as the game counts it. The three stars that open something on a set are there too, and hovering Empowered shows what it does for your class.
+- **Sets:** every class's six sets, their 4-piece and 8-piece bonuses with the numbers, and the zones each one drops in. Pick a class, opened on yours, and the stars: 4 pieces, 8 pieces or Empowered. The part of each set those stars give lights up, and at Empowered the numbers that grow turn gold. Each set's name wears its color, as an item's does in a tooltip.
+
+**The level's cards**
+- **Hidden while you choose a card:** on a small screen the game's cards are large, and the run tracker, the build list, the jewelry and the damage meter stood on them. They now hide while you choose a card or a new piece of jewelry, and come back after.
+- **Your pick of what stays:** a new **Card choice** tab in the options has **Hide everything while choosing cards**, and under it a box for each of the four. Untick the first for the four as before.
+- **A note, once:** the first time you wait in town or at **Move to begin**, a box says so, with **Keep it hidden**, **Show as before** and **Choose pieces**.
 
 ### 0.2.7, 2026-11-01
 

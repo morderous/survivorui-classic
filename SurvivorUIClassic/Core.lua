@@ -31,7 +31,7 @@ local DEFAULTS = {
 	uiSize = 0.8,              -- the whole interface's size (Mover.lua), for everyone
 	scale = {},                -- each piece's size, 1 its own
 	border = "tooltip",        -- the panels' border (Style.lua)
-	overCards = true,          -- tracker, build list, jewelry and meter over the cards
+	cardsShow = {},            -- tracker, build list, jewelry, meter over the cards: none at first
 	hideGameRow = true,        -- the game's row of spells and jewelry, under the chat
 	targetHealth = "both",
 	playerHealth = "both",
@@ -123,6 +123,12 @@ function SUIC.DB()
 	if db.defaults < 6 then
 		db.pos.summons, db.pos.talentTimers, db.pos.levelup = nil, nil, nil
 		db.defaults = 6
+	end
+	-- Every piece hidden while choosing cards, the one switch of before gone
+	-- (CardsNotice.lua says so once).
+	if db.defaults < 7 then
+		db.overCards = nil
+		db.defaults = 7
 	end
 	filled = db
 	return db
@@ -278,50 +284,77 @@ function SUIC.InRun()
 	return phase ~= nil and phase ~= "ready"
 end
 
--- Kept over the level-up and jewelry cards (the game's 0.126), as chosen:
--- the tracker, the build list, the jewelry and the meter, which help to choose.
-local overs = {}
-function SUIC.OverCards(frame)
+-- Kept over the level-up and jewelry cards (the game's 0.126) as chosen in the
+-- options' Card choice tab: the tracker, the build list, the jewelry and the
+-- meter, which help to choose. Since 0.2.8 none at first (asked 2026-11-02: on
+-- a small screen the cards are large and the pieces stood on them); one not
+-- chosen fades out while the cards are up.
+local overs = {}                -- [frame's name] = its key in cardsShow
+SUIC.CARD_PIECES = { { "tracker", "Run tracker" }, { "build", "Build list" }, { "jewelry", "Jewelry" }, { "meter", "Damage meter" } }
+
+function SUIC.CardsShown()
+	local db = SUIC.DB()
+	db.cardsShow = db.cardsShow or {}
+	return db.cardsShow
+end
+
+local function ShownOver(name)
+	return SUIC.CardsShown()[overs[name]] == true
+end
+
+function SUIC.OverCards(frame, key)
 	if frame and frame:GetName() then
-		overs[frame:GetName()] = true
+		overs[frame:GetName()] = key
 		if AZS_SetOnTopOfScreens then
-			AZS_SetOnTopOfScreens(frame, SUIC.DB().overCards and true or false)
+			AZS_SetOnTopOfScreens(frame, ShownOver(frame:GetName()))
 		end
 	end
 end
+
+local cardsUp = false
 
 function SUIC.RefreshOverCards()
 	if not AZS_SetOnTopOfScreens then
 		return
 	end
 	for name in pairs(overs) do
-		AZS_SetOnTopOfScreens(name, SUIC.DB().overCards and true or false)
+		AZS_SetOnTopOfScreens(name, ShownOver(name))
+	end
+	-- Faded again as chosen, should the cards be up.
+	cardsUp = nil
+end
+
+-- Out while the cards are up, what it was kept for after.
+local function Fade(frame, out)
+	if frame and out and not frame.suicAlpha then
+		frame.suicAlpha = frame:GetAlpha()
+		frame:SetAlpha(0)
+	elseif frame and not out and frame.suicAlpha then
+		frame:SetAlpha(frame.suicAlpha)
+		frame.suicAlpha = nil
 	end
 end
 
--- While the cards are up, what stands under them goes: the game can draw a
--- piece's art over the veil where a piece over it has the same (a button's
--- icon through a card, as the build list's; seen with Survivor UI). What it
--- was comes back with them.
+-- While the cards are up, the pieces not chosen go, and with any piece over
+-- them what stands under them too: the game can draw a piece's art over the
+-- veil where a piece over it has the same (a button's icon through a card,
+-- as the build list's; seen with Survivor UI). What it was comes back with
+-- them.
 local UNDER_CARDS = { "MainMenuBar", "SUICSummons", "SUICTalentTimers" }
-local cardsUp = false
 local underWatch = CreateFrame("Frame")
 underWatch:Hide()
 underWatch:SetScript("OnUpdate", function()
-	local up = (AZS_GetPhase and AZS_GetPhase() == "choosing" and SUIC.DB().overCards) and true or false
+	local up = (AZS_GetPhase and AZS_GetPhase() == "choosing") and true or false
 	if up == cardsUp then
 		return
 	end
 	cardsUp = up
+	local any = next(SUIC.CardsShown()) ~= nil
 	for index = 1, table.getn(UNDER_CARDS) do
-		local frame = getglobal(UNDER_CARDS[index])
-		if frame and up then
-			frame.suicAlpha = frame:GetAlpha()
-			frame:SetAlpha(0)
-		elseif frame and frame.suicAlpha then
-			frame:SetAlpha(frame.suicAlpha)
-			frame.suicAlpha = nil
-		end
+		Fade(getglobal(UNDER_CARDS[index]), up and any)
+	end
+	for name in pairs(overs) do
+		Fade(getglobal(name), up and not ShownOver(name))
 	end
 end)
 

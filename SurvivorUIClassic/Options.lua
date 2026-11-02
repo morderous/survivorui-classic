@@ -247,8 +247,6 @@ PAGES[1] = { "General", "The whole interface's size, the look of every panel, an
 		SUIC.DB().border = value
 		SUIC.RepaintPanels()
 	end)
-	Setting(page, "Over the game's cards", "overCards", "RefreshOverCards",
-		"While a level's cards or a new piece of jewelry are up, the run tracker, the build list, the jewelry and the damage meter stay lit over the game's dark veil.")
 	Setting(page, "Hide the game's row of spells and jewelry", "hideGameRow", "RefreshGameRow",
 		"The game's own row of icons under the chat; the build list and the jewelry show the same.")
 	Setting(page, "Frames a second", "fps", "RefreshFps", "In the screen's bottom left corner. Move frames takes it elsewhere.")
@@ -490,6 +488,37 @@ end }
 
 -- After the unit frames.
 table.insert(PAGES, 5, CHARACTER_PAGE)
+
+-- What stays over a level's cards (Core.lua): nothing at first, the pieces
+-- ticked once the switch on top is off.
+local CARDS_PAGE = { "Card choice", "While a level's cards or a new piece of jewelry are up. On a small screen the cards are large, so every piece hides at first.", function(page)
+	local function Again()
+		for each = 1, table.getn(page.updates) do
+			page.updates[each]()
+		end
+	end
+	Check(page, "Hide everything while choosing cards", function() return next(SUIC.CardsShown()) == nil end, function(on)
+		local shown = SUIC.CardsShown()
+		for index = 1, table.getn(SUIC.CARD_PIECES) do
+			shown[SUIC.CARD_PIECES[index][1]] = (not on) or nil
+		end
+		SUIC.RefreshOverCards()
+		Again()
+	end, "Untick it for the four as before, or tick below only what you want over the cards.")
+	Header(page, "Shown over the cards")
+	for index = 1, table.getn(SUIC.CARD_PIECES) do
+		local key = SUIC.CARD_PIECES[index][1]
+		Check(page, SUIC.CARD_PIECES[index][2], function() return SUIC.CardsShown()[key] == true end, function(on)
+			SUIC.CardsShown()[key] = on or nil
+			SUIC.RefreshOverCards()
+			Again()
+		end)
+	end
+	Note(page, "A piece ticked stays lit over the game's dark veil and takes its clicks there.")
+end }
+
+-- After General.
+table.insert(PAGES, 2, CARDS_PAGE)
 
 ------------------------------------------------------------------------------
 -- The tabs.
