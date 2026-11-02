@@ -50,7 +50,7 @@ local function EntryEnter()
 	end
 	hovered = this
 	this.edge:SetBackdropBorderColor(1, 1, 1, 1)
-	SUIC.LightPlate(unit.name)
+	SUIC.LightPlate(unit.name, unit.id)
 	GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
 	GameTooltip:SetText(unit.name or "?")
 	GameTooltip:AddLine(KIND_NAMES[unit.kind] or "", 1, 0.82, 0)
@@ -152,7 +152,7 @@ local function Fill(entry, unit, target, mouse)
 	end
 	entry.name:SetTextColor(color[1], color[2], color[3])
 	if entry == hovered then
-		SUIC.LightPlate(unit.name)
+		SUIC.LightPlate(unit.name, unit.id)
 	end
 	if entry == hovered or (mouse and mouse == unit.name) then
 		entry.edge:SetBackdropBorderColor(1, 1, 1, 1)

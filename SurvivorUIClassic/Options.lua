@@ -381,7 +381,34 @@ PAGES[13] = { "Level Up!", "The button that opens the levels waiting (the game's
 	Reset(page, { "levelup" })
 end }
 
-PAGES[14] = { "Nameplates", "The game's own nameplates over the enemies and the friends.", function(page)
+PAGES[14] = { "Nameplates", "Plates over the enemies and the friends: red for the rank and file, then green for elites, blue for lair guardians, purple for bosses and orange for the final boss.", function(page)
+	Check(page, "Nameplates", function() return NAMEPLATES_ON end, function(on)
+		if (NAMEPLATES_ON and true or false) ~= on then
+			SUIC_ToggleEnemyPlates()
+		end
+	end, "The plates over the enemies: the name, the health and a skull over the guardians and the bosses.")
+	-- Two to a row.
+	local function Both(left, leftKey, right, rightKey)
+		Setting(page, left, leftKey)
+		page.y = page.y + 26
+		local other = Setting(page, right, rightKey)
+		other:ClearAllPoints()
+		other:SetPoint("TOPLEFT", page, "TOPLEFT", 200, page.y + 26)
+	end
+	Both("Normal monsters", "platesNormal", "Elite monsters", "platesElite")
+	Both("Guardians", "platesGuardian", "Bosses", "platesBoss")
+	Setting(page, "Your target, whatever its kind", "platesTargetAny", nil,
+		"A kind left out still shows when it is your target.")
+	Setting(page, "Boss bar", "bossBars", "RefreshBossBars",
+		"The boss bars at the top of the screen, as on the Boss bars page.")
+	Header(page, "More")
+	Check(page, "Friendly nameplates", function() return FRIENDNAMEPLATES_ON end, function(on)
+		if (FRIENDNAMEPLATES_ON and true or false) ~= on then
+			SUIC_ToggleFriendPlates()
+		end
+	end, "The plates over your party and your summons.")
+	Setting(page, "Show only your target", "platesTarget", nil,
+		"Every other enemy's plate is put away.")
 	Setting(page, "Overlapping plates", "plateOverlap", "RefreshPlateLayout",
 		"Each plate stays right over its enemy; off, they move apart in a crowd. The game's Nameplate Layout, in its Options.")
 	Header(page, "Keys")
@@ -396,28 +423,19 @@ PAGES[14] = { "Nameplates", "The game's own nameplates over the enemies and the 
 			.."|cffffd100"..(friend or "No key").."|r   shows or hides the friends' nameplates")
 	end)
 	Note(page, "Each on its own: one never hides the other. Set the keys again in the game's Key Bindings, under SurvivorUI Classic.")
-	Header(page, "Shown now")
-	Check(page, "Enemy nameplates", function() return NAMEPLATES_ON end, function(on)
-		if (NAMEPLATES_ON and true or false) ~= on then
-			SUIC_ToggleEnemyPlates()
-		end
-	end, "The plates over every enemy: its name and its health.")
-	Check(page, "Friendly nameplates", function() return FRIENDNAMEPLATES_ON end, function(on)
-		if (FRIENDNAMEPLATES_ON and true or false) ~= on then
-			SUIC_ToggleFriendPlates()
-		end
-	end, "The plates over your party and your summons.")
-	Header(page, "Which enemies")
-	Setting(page, "Show only your target", "platesTarget", nil,
-		"Every other enemy's plate is put away.")
-	Setting(page, "Show only bosses, guardians and elites", "platesImportant", nil,
-		"The rank and file's plates are put away; your target's always shows.")
 end }
 
-PAGES[10] = { "Loot", "What drops, a while and fading, as the game's notices but movable. They stand in for the game's.", function(page)
+PAGES[10] = { "Loot", "What drops: notices a while and fading, as the game's but movable, and a list of the run's loot with the marks gathered. They stand in for the game's notices.", function(page)
 	Setting(page, "Show the loot notices", "lootLog", "RefreshLoot")
 	Size(page, "Size", "loot")
-	Reset(page, { "loot" })
+	Header(page, "Loot list")
+	Setting(page, "Show the loot list", "lootList", "RefreshLootList",
+		"Each piece the run has dropped, the newest on top, and the marks gathered: hover them for each boss's.")
+	Slider(page, "Lines", 3, 15, 1, function() return tonumber(SUIC.DB().lootLines) or 8 end, function(value)
+		SUIC.DB().lootLines = value
+	end, function(value) return tostring(value) end)
+	Size(page, "List size", "lootlist")
+	Reset(page, { "loot", "lootlist" })
 end }
 
 PAGES[11] = { "Summons", "Your summons and totems as the game's buffs: how many are out and the time the first goes.", function(page)
@@ -528,6 +546,7 @@ table.insert(PAGES, { "World markers", "From the game's 0.139.2: marks drawn on 
 	end
 	World("Friends down", "worldDowned", "In a co-op run, a gold cross over a friend who is down, their name and how far.")
 	World("Caches", "worldCaches", "The minimap's loot bag over each cache still there, and how far.")
+	World("Light beams over caches", "worldBeams", "A column of gold light over each cache, its bag floating near the top. Drawn over the world: it fades where you stand in front of it.")
 	World("Lairs", "worldLairs", "The guardian's name over its lair while it sleeps; awake, over the guardian itself, following it; slain, back over the lair with the time until it comes back.")
 	World("Arrows", "worldArrows", "For friends down, caches and lairs out of sight: an arrow on a ring round you toward the nearest few, with how far.")
 	World("Explosive orbs", "worldOrbs", "In a run with the Explosive affix, a pulsing mark over each orb: only direct hits hurt them.")

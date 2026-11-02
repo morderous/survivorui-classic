@@ -239,6 +239,7 @@ local COLUMN = {
 	{ key = "build", frame = "SUICBuildList", on = "buildList" },
 	{ key = "jewelry", frame = "SUICJewelry", on = "jewelry" },
 	{ key = "meter", frame = "SUICMeter", on = "meter" },
+	{ key = "lootlist", frame = "SUICLootList", on = "lootList" },
 }
 
 function SUIC.ColumnHome(key)

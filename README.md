@@ -90,6 +90,28 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.10, 2026-11-02
+
+New nameplates in the old plates' manner, each enemy's kind told by the game itself, a beam of light over each cache, and a loot list.
+
+**Nameplates**
+- **A new look:** a thin bar in a black line with round ends, the name over it and the health's share small inside. The rank and file in red; elites in green, lair guardians in blue, bosses in purple and the final boss in orange, each a little larger.
+- **A skull over the name:** a plain bone one over an elite, the lairs' skull over a guardian, and an infernal one over a boss.
+- **Told by the game:** the game's world anchors (its 0.139.2) say which plate is an elite, a guardian or a boss, so a lair guardian and its zone's elites, who share a name, each get their own color.
+- **In a crowd:** the bosses' plates in front, then the guardians', then the elites'; the rank and file a little faded behind them, your target never.
+- **Lines and light:** your target lined in gold, the enemy whose boss bar is under the mouse in white, and the plate under the mouse glows and comes to the front.
+- **Friends:** your party in their class's color, pets, summons and totems in mint, thinner, in a gold rim.
+- **What shows:** each kind on its own in the options: Normal monsters, Elite monsters, Guardians and Bosses. By default the elites, guardians and bosses show and the rank and file don't. "Your target, whatever its kind" shows your target's plate though its kind is off. A Boss bar switch there too, and the friendly plates are turned on once.
+- An awake guardian's lair mark gives way to its nameplate while the plate shows.
+
+**World markers**
+- **Light beams over caches:** a column of gold light over each cache, its bag floating near the top. It is drawn over the world, so it fades where you stand in front of it.
+
+**Loot list** (new)
+- A Loot panel under the damage meter, from the first drop: the newest on top, each piece in its quality's color, x2 when it comes again, the marks a piece you already collected gives in gold, "New!" when it is new in your collection, and the second of the run it came. Hover a piece for its tooltip once your hero has worn it.
+- On the title's right, the marks gathered this run: hover them for each boss's, and your class's total.
+- It shows the lines the screen has room for. Options, Loot tab: Show the loot list, Lines (3 to 15) and List size.
+
 ### 0.2.9, 2026-11-02
 
 Marks on the world itself with the game's 0.139.2, two new Guide pages, Haste and Speed, and the interface keeps the size you chose.
