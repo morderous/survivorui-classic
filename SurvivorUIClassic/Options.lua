@@ -275,6 +275,8 @@ PAGES[3] = { "Unit frames", "Your frame, your target's and the party's, and the 
 	Header(page, "Health text")
 	Health(page, "On your frame", "playerHealth")
 	Health(page, "On your target's frame (an enemy's real health)", "targetHealth")
+	Setting(page, "Shields on your health", "shieldBar", "UpdateHealthText",
+		"Striped light blue on your health bar, and in its numbers with your health, past 100%.")
 	Reset(page, { "player", "target", "party" })
 end }
 
@@ -286,6 +288,12 @@ PAGES[4] = { "Minimap", "The minimap with its zone name and its buttons.", funct
 		"How Luck, Damage and Crit really work. A ! when there is something new to read. Hidden, the guide opens with /suic guide.")
 	Setting(page, "Caches and lairs on the minimap", "mapPins", "RefreshMapPins",
 		"A chest for every cache, a red flag for every guardian's lair (faint when empty, beating while it fights), in place of the game's one flag.")
+	Setting(page, "Lairs follow their guardian", "pinFollow", "RefreshMapPins",
+		"An awake guardian out to fight takes its lair's skull along, back to the lair once slain.")
+	Setting(page, "Bosses", "pinBosses", "RefreshMapPins",
+		"An infernal skull for every boss, where it goes. The final boss's glows orange.")
+	Setting(page, "Elites", "pinElites", "RefreshMapPins",
+		"A plain skull for every elite, where it goes.")
 	Setting(page, "A border round the clock", "clockFrame", "RefreshClock",
 		"The panels' border round the clock under the minimap.")
 	-- The clock's time (Clock.lua). The computer's ticked, the slider has no say.
@@ -397,6 +405,8 @@ PAGES[14] = { "Nameplates", "Plates over the enemies and the friends: red for th
 	end
 	Both("Normal monsters", "platesNormal", "Elite monsters", "platesElite")
 	Both("Guardians", "platesGuardian", "Bosses", "platesBoss")
+	Setting(page, "Debuffs inside the plates", "plateDebuffs", nil,
+		"Small icons of the debuffs on a guardian or a boss, left to right inside its bar. An elite's show while it is your target or under the mouse.")
 	Setting(page, "Your target, whatever its kind", "platesTargetAny", nil,
 		"A kind left out still shows when it is your target.")
 	Setting(page, "Boss bar", "bossBars", "RefreshBossBars",
@@ -522,7 +532,7 @@ local CARDS_PAGE = { "Card choice", "While a level's cards or a new piece of jew
 		end
 		SUIC.RefreshOverCards()
 		Again()
-	end, "Untick it for the four as before, or tick below only what you want over the cards.")
+	end, "Untick it for all of them as before, or tick below only what you want over the cards.")
 	Header(page, "Shown over the cards")
 	for index = 1, table.getn(SUIC.CARD_PIECES) do
 		local key = SUIC.CARD_PIECES[index][1]
@@ -537,6 +547,112 @@ end }
 
 -- After General.
 table.insert(PAGES, 2, CARDS_PAGE)
+
+-- The Stats panel (StatsPanel.lua): each stat ticked or not, in two columns,
+-- its color's swatch beside it; a click on a swatch opens the fifteen colors.
+local palette, paletteStat, paletteSwatch
+local function PaintSwatch(swatch, index)
+	local color = SUIC.STAT_COLORS[SUIC.StatColor(index)]
+	swatch.color:SetVertexColor(color[2], color[3], color[4])
+end
+
+local function Palette()
+	if palette then
+		return palette
+	end
+	palette = CreateFrame("Frame", nil, window)
+	palette:SetFrameStrata("DIALOG")
+	palette:SetWidth(8 * 18 + 12)
+	palette:SetHeight(2 * 18 + 12)
+	SUIC.Framed(palette)
+	palette:EnableMouse(true)
+	for index = 1, table.getn(SUIC.STAT_COLORS) do
+		local color = SUIC.STAT_COLORS[index]
+		local square = CreateFrame("Button", nil, palette)
+		square:SetWidth(16)
+		square:SetHeight(16)
+		square:SetPoint("TOPLEFT", palette, "TOPLEFT", 6 + math.mod(index - 1, 8) * 18, -6 - math.floor((index - 1) / 8) * 18)
+		local fill = square:CreateTexture(nil, "ARTWORK")
+		fill:SetTexture(SUIC.FLAT)
+		fill:SetVertexColor(color[2], color[3], color[4])
+		fill:SetAllPoints(square)
+		square:SetHighlightTexture(HIGHLIGHT, "ADD")
+		square.index, square.label = index, color[1]
+		square:SetScript("OnClick", function()
+			SUIC.DB().statsColors[SUIC.STAT_LIST[paletteStat][1]] = this.index
+			PaintSwatch(paletteSwatch, paletteStat)
+			SUIC.RefreshStatsPanel()
+			palette:Hide()
+		end)
+		square:SetScript("OnEnter", function()
+			GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+			GameTooltip:SetText(this.label)
+			GameTooltip:Show()
+		end)
+		square:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	end
+	palette:Hide()
+	return palette
+end
+
+local STATS_PAGE = { "Stats panel", "Your numbers on the screen during a run, in a panel of the same make as the others. Tick the stats to show and click a swatch for a number's color.", function(page)
+	Setting(page, "Show the stats panel", "statsPanel", "RefreshStatsPanel")
+	Size(page, "Size", "stats")
+	Header(page, "Stats")
+	local top, half = page.y, PAGE_WIDTH / 2
+	local perColumn = math.ceil(table.getn(SUIC.STAT_LIST) / 2)
+	for index = 1, table.getn(SUIC.STAT_LIST) do
+		local stat = index
+		local column = math.floor((index - 1) / perColumn)
+		local y = top - math.mod(index - 1, perColumn) * 22
+		local name = NextName()
+		local check = CreateFrame("CheckButton", name, page, "OptionsCheckButtonTemplate")
+		check:SetWidth(22)
+		check:SetHeight(22)
+		check:SetPoint("TOPLEFT", page, "TOPLEFT", column * half, y)
+		getglobal(name.."Text"):SetText(SUIC.STAT_LIST[index][1])
+		check:SetScript("OnClick", function()
+			SUIC.DB().statsShown[SUIC.STAT_LIST[stat][1]] = this:GetChecked() and true or false
+			SUIC.RefreshStatsPanel()
+		end)
+		local swatch = CreateFrame("Button", nil, page)
+		swatch:SetWidth(18)
+		swatch:SetHeight(12)
+		swatch:SetPoint("TOPLEFT", page, "TOPLEFT", column * half + 140, y - 5)
+		swatch.edge = swatch:CreateTexture(nil, "BACKGROUND")
+		swatch.edge:SetTexture(SUIC.FLAT)
+		swatch.edge:SetVertexColor(1, 1, 1)
+		swatch.edge:SetPoint("TOPLEFT", swatch, "TOPLEFT", -1, 1)
+		swatch.edge:SetPoint("BOTTOMRIGHT", swatch, "BOTTOMRIGHT", 1, -1)
+		swatch.color = swatch:CreateTexture(nil, "ARTWORK")
+		swatch.color:SetTexture(SUIC.FLAT)
+		swatch.color:SetAllPoints(swatch)
+		swatch:SetScript("OnClick", function()
+			local shown = Palette()
+			if shown:IsShown() and paletteStat == stat then
+				shown:Hide()
+				return
+			end
+			paletteStat, paletteSwatch = stat, this
+			shown:ClearAllPoints()
+			shown:SetPoint("TOPLEFT", this, "BOTTOMLEFT", -4, -2)
+			shown:Show()
+		end)
+		Updates(page, function()
+			check:SetChecked(SUIC.StatShown(stat) and 1 or nil)
+			PaintSwatch(swatch, stat)
+		end)
+	end
+	page.y = top - perColumn * 22 - 6
+	page:SetScript("OnHide", function()
+		if palette then
+			palette:Hide()
+		end
+	end)
+end }
+
+-- After Jewelry.
+table.insert(PAGES, 11, STATS_PAGE)
 
 -- Marks on the world itself (WorldMarks.lua), last.
 table.insert(PAGES, { "World markers", "From the game's 0.139.2: marks drawn on the world itself, over what they point at, wherever the camera turns, with no nameplate. Only you see them.", function(page)

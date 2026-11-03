@@ -124,7 +124,6 @@ end)
 -- plate is read again every frame (its name, its bar's color and health),
 -- else one handed on shows its last unit's look for a moment.
 
-local ROUND = "Interface\\AddOns\\SurvivorUIClassic\\Art\\PlateRound"
 local END = 0.25                 -- each round end's share of the art across
 local READ_EVERY = 0.25          -- the anchors' catalog
 local CLAIM_EVERY = 0.1          -- their spots on the screen
@@ -312,16 +311,8 @@ local function Claim()
 	end
 end
 
--- Three pieces of the rounded art: the left end, the middle, the right end.
-local function Strip(parent, layer)
-	local strip = {}
-	for index = 1, 3 do
-		strip[index] = parent:CreateTexture(nil, layer)
-		strip[index]:SetTexture(ROUND)
-	end
-	strip[2]:SetTexCoord(END, 1 - END, 0, 1)
-	return strip
-end
+
+local Strip, Lay, DebuffArt = SUIC.RoundStrip, SUIC.RoundLay, SUIC.DebuffArt
 
 local function Tint(strip, r, g, b, a)
 	for index = 1, 3 do
@@ -354,36 +345,13 @@ local function Paint(look)
 	look.name:SetTextColor(1, 1, 1, a)
 	look.share:SetTextColor(1, 1, 1, a)
 	look.skull:SetVertexColor(1, 1, 1, a)
+	for index = 1, table.getn(look.debuffs) do
+		look.debuffs[index]:SetAlpha(a)
+	end
 	look.painted = true
 end
 
-local function Piece(piece, holder, left, width, height, from, to)
-	if width < 0.5 then
-		piece:Hide()
-		return
-	end
-	piece:ClearAllPoints()
-	piece:SetPoint("LEFT", holder, "LEFT", left, 0)
-	piece:SetWidth(width)
-	piece:SetHeight(height)
-	if from then
-		piece:SetTexCoord(from, to, 0, 1)
-	end
-	piece:Show()
-end
 
--- A strip `width` across and `height` tall, `left` from its holder's left
--- edge, drawn `filled` across from its left: the ends as round as the height
--- has them, a fill short of the right end cut square.
-local function Lay(strip, holder, left, width, height, filled)
-	local cap = math.min(height, width) / 2
-	local first = math.min(filled, cap)
-	local middle = math.min(math.max(filled - cap, 0), width - 2 * cap)
-	local last = math.max(filled - (width - cap), 0)
-	Piece(strip[1], holder, left, first, height, 0, END * first / cap)
-	Piece(strip[2], holder, left + cap, middle, height)
-	Piece(strip[3], holder, left + width - cap, last, height, 1 - END, 1 - END + END * last / cap)
-end
 
 -- The client's raid icon, left of the bar, a little taller. The client sets
 -- its anchor again when the window changes size, so it is put back each time
@@ -410,6 +378,7 @@ local function Raise(look)
 	look.plate:SetFrameLevel(rise)
 	look:SetFrameLevel(rise + 1)
 	look.bar:SetFrameLevel(rise + 2)
+	look.icons:SetFrameLevel(rise + 3)
 end
 
 -- The soft glow round the bar of the plate under the mouse, as far out as
@@ -465,6 +434,107 @@ local function Dress(look, kind)
 	look.across, look.percent, look.class, look.painted = nil, nil, nil, nil
 	if look.marked then
 		PlaceRaid(look)
+	end
+end
+
+------------------------------------------------------------------------------
+-- The debuffs on an elite, a guardian or a boss: small icons inside its bar,
+-- left to right, clear of the health's share at the right, the stacks in the
+-- corner (Lucas, 2026-11-03). A guardian's and a boss's from the game, by its
+-- unit's id (AZS_GetDebuffs, as the boss bars read them); an elite's only
+-- while the client can name it, your target or under the mouse (UnitDebuff).
+
+local DEBUFF_KINDS = { elite = true, guardian = true, boss = true, final = true }
+local DEBUFF_EVERY = 0.2
+local DEBUFF_ROOM = 24          -- the health's share, at the bar's right end
+local DEBUFF_MOST = 8
+
+
+local function DebuffList(look, isTarget)
+	if look.kind ~= "elite" and look.unit and look.claimName == look.named and AZS_GetDebuffs then
+		local ok, list = pcall(AZS_GetDebuffs, tonumber(look.unit) or look.unit)
+		if ok and type(list) == "table" then
+			return list
+		end
+	end
+	local token
+	if isTarget then
+		token = "target"
+	elseif UnitExists("mouseover") and UnitName("mouseover") == look.named then
+		token = "mouseover"
+	end
+	local list = {}
+	if token then
+		for index = 1, DEBUFF_MOST do
+			local texture, count = UnitDebuff(token, index)
+			if not texture then
+				break
+			end
+			list[index] = { icon = texture, stacks = count }
+		end
+	end
+	return list
+end
+
+local function DebuffIcon(look, index)
+	local icon = look.debuffs[index]
+	if icon then
+		return icon
+	end
+	icon = CreateFrame("Frame", nil, look.icons)
+	icon.edge = icon:CreateTexture(nil, "BACKGROUND")
+	icon.edge:SetTexture(SUIC.BAR)
+	icon.edge:SetVertexColor(0, 0, 0, 1)
+	icon.edge:SetPoint("TOPLEFT", icon, "TOPLEFT", -0.5, 0.5)
+	icon.edge:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 0.5, -0.5)
+	icon.art = icon:CreateTexture(nil, "ARTWORK")
+	icon.art:SetAllPoints(icon)
+	icon.art:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	icon.stacks = icon:CreateFontString(nil, "OVERLAY")
+	icon.stacks:SetFont(look.face, 7, "OUTLINE")
+	icon.stacks:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 2, -1)
+	look.debuffs[index] = icon
+	return icon
+end
+
+local function HideDebuffs(look)
+	for index = 1, table.getn(look.debuffs) do
+		look.debuffs[index]:Hide()
+	end
+	look.debuffsAt = nil
+end
+
+local function UpdateDebuffs(look, db, isTarget, now)
+	if not (db.plateDebuffs and DEBUFF_KINDS[look.kind]) then
+		if look.debuffsAt then
+			HideDebuffs(look)
+		end
+		return
+	end
+	if look.debuffsAt and now - look.debuffsAt < DEBUFF_EVERY then
+		return
+	end
+	look.debuffsAt = now
+	local style = look.style
+	local size = style.height - 1
+	local room = math.min(DEBUFF_MOST, math.floor((style.width - DEBUFF_ROOM - 2) / (size + 1)))
+	local list = DebuffList(look, isTarget)
+	local count = math.min(room, table.getn(list))
+	for index = 1, count do
+		local debuff = list[index]
+		local icon = DebuffIcon(look, index)
+		icon:SetWidth(size)
+		icon:SetHeight(size)
+		icon:ClearAllPoints()
+		icon:SetPoint("LEFT", look.bar, "LEFT", 2 + (index - 1) * (size + 1), 0)
+		icon.art:SetTexture(DebuffArt(debuff.icon))
+		local stacks = tonumber(debuff.stacks) or 0
+		icon.stacks:SetText(stacks > 1 and stacks or "")
+		icon:SetAlpha(look.fade or 1)
+		icon:Show()
+	end
+	for index = count + 1, table.getn(look.debuffs) do
+		look.debuffs[index]:Hide()
 	end
 end
 
@@ -529,6 +599,9 @@ local function Skin(plate)
 	look.share:SetShadowOffset(0, 0)
 	look.skull = look.bar:CreateTexture(nil, "OVERLAY")
 	look.skull:SetPoint("BOTTOM", look.name, "TOP", 0, 0)
+	look.icons = CreateFrame("Frame", nil, look.bar)
+	look.icons:SetAllPoints(look.bar)
+	look.debuffs = {}
 	look.shown, look.edge, look.fade = true, "none", 1
 	Dress(look, "normal")
 	table.insert(looks, look)
@@ -580,6 +653,7 @@ local function Update(look, db, hasTarget, now)
 			look.bar:Show()
 		else
 			look.bar:Hide()
+			HideDebuffs(look)
 		end
 		if stock.raid then
 			stock.raid:SetAlpha(shown and 1 or 0)
@@ -623,6 +697,7 @@ local function Update(look, db, hasTarget, now)
 		PlaceRaid(look)
 	end
 	look.marked = marked
+	UpdateDebuffs(look, db, isTarget, now)
 end
 
 -- The plate to line: the one its unit's anchor claimed, else the first of

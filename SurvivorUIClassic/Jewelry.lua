@@ -90,14 +90,40 @@ local function Short(slot, link)
 		end
 	end
 	scan:Hide()
-	known[link] = table.concat(tags, "  ")
-	return known[link]
+	known[link] = tags
+	return tags
 end
 
 ------------------------------------------------------------------------------
 -- The rows.
 
 local NAME_ROOM = W - 2 * PAD - ROW - 2
+local GIVES_ROOM = W - 2 * PAD - ROW - 4
+local GIVES_LINE = 8            -- each line more that a piece's gives take
+
+-- What a piece gives, each tag whole, on as many lines as it takes: a class
+-- amulet's four do not fit on one ("+60% AREA  +120% DUR  +60% DMG  36%
+-- BOOM", asked 2026-11-02). Measured on a string of no width of its own.
+local measure = SUIC.Text(panel, "GameFontGreenSmall", 7)
+
+local function Gives(tags)
+	local lines, line = {}, ""
+	for index = 1, table.getn(tags) do
+		local tried = line == "" and tags[index] or line.."  "..tags[index]
+		measure:SetText(tried)
+		if line == "" or measure:GetStringWidth() <= GIVES_ROOM then
+			line = tried
+		else
+			table.insert(lines, line)
+			line = tags[index]
+		end
+	end
+	measure:SetText("")
+	if line ~= "" then
+		table.insert(lines, line)
+	end
+	return table.concat(lines, "\n"), math.max(1, table.getn(lines))
+end
 
 -- A piece's name on one line: whole, else a class amulet's spell alone (the
 -- part after its colon), else cut with dots.
@@ -141,7 +167,8 @@ for index = 1, table.getn(SLOTS) do
 	row.icon = row:CreateTexture(nil, "ARTWORK")
 	row.icon:SetWidth(ROW - 3)
 	row.icon:SetHeight(ROW - 3)
-	row.icon:SetPoint("LEFT", row, "LEFT", 0, 0)
+	-- At the top, by the name, should what it gives take more lines.
+	row.icon:SetPoint("TOPLEFT", row, "TOPLEFT", 0, -1)
 	row.name = SUIC.Text(row, "GameFontHighlightSmall")
 	row.name:SetJustifyH("LEFT")
 	row.name:SetWidth(NAME_ROOM + 20)
@@ -154,10 +181,11 @@ for index = 1, table.getn(SLOTS) do
 end
 
 local function Draw()
-	local worn = 0
+	local worn, y = 0, TOP
 	for index = 1, table.getn(rows) do
 		local row = rows[index]
 		local link = GetInventoryItemLink("player", row.slot)
+		local lines = 1
 		row.name:ClearAllPoints()
 		if link then
 			worn = worn + 1
@@ -165,14 +193,23 @@ local function Draw()
 			local _, _, color, name = string.find(link, "|c(%x+)|H.-|h%[(.-)%]|h")
 			Fit(row.name, name or "?", color or "ffffffff")
 			row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 5, 0)
-			row.gives:SetText(Short(row.slot, link))
+			local gives
+			gives, lines = Gives(Short(row.slot, link))
+			row.gives:SetText(gives)
 		else
 			row.icon:SetTexture(row.empty)
 			row.name:SetText("|cff8a8a8a"..row.label.."|r")
 			row.name:SetPoint("LEFT", row.icon, "RIGHT", 5, 0)
 			row.gives:SetText("")
 		end
+		-- Each piece under the one before, as tall as what it gives.
+		local height = ROW + (lines - 1) * GIVES_LINE
+		row:ClearAllPoints()
+		row:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -y)
+		row:SetHeight(height - 1)
+		y = y + height
 	end
+	panel:SetHeight(y + 5)
 	panel.note:SetText(worn.." / "..table.getn(rows))
 end
 

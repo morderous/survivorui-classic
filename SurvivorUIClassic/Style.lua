@@ -280,3 +280,59 @@ end
 SUIC.OnStart(function()
 	SUIC.RepaintPanels()
 end)
+
+------------------------------------------------------------------------------
+-- The plates' rounded bar (Art\PlateRound, of our own), the nameplates' and
+-- the boss bars': its art, each round end's share of it across.
+local ROUND = "Interface\\AddOns\\SurvivorUIClassic\\Art\\PlateRound"
+local END = 0.25
+
+-- Three pieces of the rounded art: the left end, the middle, the right end.
+local function Strip(parent, layer)
+	local strip = {}
+	for index = 1, 3 do
+		strip[index] = parent:CreateTexture(nil, layer)
+		strip[index]:SetTexture(ROUND)
+	end
+	strip[2]:SetTexCoord(END, 1 - END, 0, 1)
+	return strip
+end
+
+local function Piece(piece, holder, left, width, height, from, to)
+	if width < 0.5 then
+		piece:Hide()
+		return
+	end
+	piece:ClearAllPoints()
+	piece:SetPoint("LEFT", holder, "LEFT", left, 0)
+	piece:SetWidth(width)
+	piece:SetHeight(height)
+	if from then
+		piece:SetTexCoord(from, to, 0, 1)
+	end
+	piece:Show()
+end
+
+-- A strip `width` across and `height` tall, `left` from its holder's left
+-- edge, drawn `filled` across from its left: the ends as round as the height
+-- has them, a fill short of the right end cut square.
+local function Lay(strip, holder, left, width, height, filled)
+	local cap = math.min(height, width) / 2
+	local first = math.min(filled, cap)
+	local middle = math.min(math.max(filled - cap, 0), width - 2 * cap)
+	local last = math.max(filled - (width - cap), 0)
+	Piece(strip[1], holder, left, first, height, 0, END * first / cap)
+	Piece(strip[2], holder, left + cap, middle, height)
+	Piece(strip[3], holder, left + width - cap, last, height, 1 - END, 1 - END + END * last / cap)
+end
+
+-- A debuff's icon, by its path or its bare name in Interface\Icons.
+local function DebuffArt(art)
+	art = art or ""
+	if art ~= "" and not string.find(art, "\\", 1, true) then
+		art = "Interface\\Icons\\"..art
+	end
+	return art ~= "" and art or "Interface\\Icons\\INV_Misc_QuestionMark"
+end
+
+SUIC.RoundStrip, SUIC.RoundLay, SUIC.DebuffArt = Strip, Lay, DebuffArt

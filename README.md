@@ -90,6 +90,30 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.11, 2026-11-03
+
+A Stats panel of your own, boss bars in the nameplates' look, debuffs inside the plates, bosses and awake guardians that move on the minimap, and your shields on your health bar.
+
+**Stats panel** (new)
+- **Your numbers in a panel:** the run's stats in a panel of the same make as the others, on the left of the screen. Ten show at first.
+- **Yours to choose:** a new **Stats panel** tab ticks each of the 22 stats on or off and gives each number one of 15 colors. It can also stay in sight while you choose cards (**Card choice**).
+
+**Boss bars**
+- **In the nameplates' look:** the name over the bar on the left, the plate's rounded bar in the kind's color, a white rim (gold on your target), a soft glow under the mouse, the share on the right and the boss's debuffs inside on the left.
+
+**Nameplates**
+- **Debuffs inside:** on elites, guardians and bosses, our debuffs in small icons inside the bar, from left to right. A guardian's and a boss's come from the game, with their stacks; an elite's show while it is your target or under the mouse, as the game shares no elite's. Off with **Debuffs inside the plates** (Nameplates).
+
+**Minimap**
+- **On the move:** an awake guardian's skull follows the guardian, blinking orange, and goes back to its lair once it is slain. Each boss gets a horned skull that goes where it goes, the final boss in an orange glow. Elites can get a bone skull too (off). The Minimap tab: **Lairs follow their guardian**, **Bosses** and **Elites**.
+
+**Unit frames**
+- **Your shields:** striped light blue on your health bar, as in Survivor UI, and your health numbers count them too, in light blue, the share going past 100%. Off with **Shields on your health** (Unit frames).
+
+**Also**
+- **Jewelry:** a piece with many effects takes as many lines as it needs, each effect whole; it used to be cut in the middle and cover the piece below.
+- **Damage meter:** a new install no longer folds the small lines into Others.
+
 ### 0.2.10, 2026-11-02
 
 New nameplates in the old plates' manner, each enemy's kind told by the game itself, a beam of light over each cache, and a loot list.

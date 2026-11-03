@@ -35,6 +35,7 @@ local DEFAULTS = {
 	hideGameRow = true,        -- the game's row of spells and jewelry, under the chat
 	targetHealth = "both",
 	playerHealth = "both",
+	shieldBar = true,          -- the shields on you, striped on your health bar and in its numbers
 	tracker = true,
 	trackerBosses = true,
 	trackerGuardians = true,
@@ -52,12 +53,18 @@ local DEFAULTS = {
 	meter = true,
 	meterLines = 7,
 	meterMode = "damage",
-	meterFold = true,          -- the lines under meterFoldShare% folded into Others
+	meterFold = false,         -- the lines under meterFoldShare% folded into Others (off: Lucas, 2026-11-03)
 	meterFoldShare = 10,
 	mapButton = true,          -- the addon's button on the minimap
 	guideButton = true,        -- the guide's button on the minimap (Guide.lua)
 	guideRead = {},            -- the guide's pages read
 	mapPins = true,            -- the caches and the lairs on the minimap (MapPins.lua)
+	statsPanel = true,         -- your numbers on the screen during a run (StatsPanel.lua)
+	statsShown = {},           -- [stat] = shown or not, as chosen
+	statsColors = {},          -- [stat] = its color, as chosen (SUIC.STAT_COLORS)
+	pinFollow = true,          -- an awake guardian's lair pin goes with it
+	pinBosses = true,          -- a skull on the minimap for every boss
+	pinElites = false,         -- and for every elite
 	clockFrame = true,         -- a border round the game's clock under it (Clock.lua)
 	fps = true,                -- the frames a second, in the screen's corner (Fps.lua)
 	cooldownText = true,       -- the numbers on the action buttons (Cooldowns.lua)
@@ -73,6 +80,7 @@ local DEFAULTS = {
 	platesGuardian = true,
 	platesBoss = true,         -- the final boss's too
 	platesTargetAny = false,   -- your target's plate though its kind is off
+	plateDebuffs = true,       -- your debuffs inside the elites', guardians' and bosses' plates
 	combatText = true,         -- the game's combat text at all (CombatText.lua)
 	ctColumns = false,         -- Survivor UI's numbers in its place (CombatColumns.lua)
 	ctIcons = true,            -- each with its source's icon
@@ -296,7 +304,7 @@ end
 -- a small screen the cards are large and the pieces stood on them); one not
 -- chosen fades out while the cards are up.
 local overs = {}                -- [frame's name] = its key in cardsShow
-SUIC.CARD_PIECES = { { "tracker", "Run tracker" }, { "build", "Build list" }, { "jewelry", "Jewelry" }, { "meter", "Damage meter" } }
+SUIC.CARD_PIECES = { { "tracker", "Run tracker" }, { "build", "Build list" }, { "jewelry", "Jewelry" }, { "meter", "Damage meter" }, { "stats", "Stats panel" } }
 
 function SUIC.CardsShown()
 	local db = SUIC.DB()

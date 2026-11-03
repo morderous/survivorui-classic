@@ -87,12 +87,81 @@ local function UpdateMana(text, bar, stock, unit, style)
 	end
 end
 
+-- The shields on you (AZS_RUN's sh, the game's; ٴٴ, 2026-11-03), as the
+-- Survivor UI draws them: striped light blue on your health bar from where
+-- the health ends, a bright edge at its end; past the bar's end, over its
+-- right end instead. In the numbers too: the health and the shield together,
+-- light blue, the share past 100%. Off with "Shields on your health"
+-- (shieldBar, the Unit frames tab).
+local shield
+if PlayerFrameHealthBar then
+	shield = CreateFrame("Frame", nil, PlayerFrameHealthBar)
+	shield:SetAllPoints(PlayerFrameHealthBar)
+	shield:SetFrameLevel(PlayerFrameHealthBar:GetFrameLevel() + 1)
+	shield.fill = shield:CreateTexture(nil, "BACKGROUND")
+	shield.fill:SetTexture(SUIC.FLAT)
+	shield.fill:SetVertexColor(0.59, 0.82, 1, 0.45)
+	shield.stripes = shield:CreateTexture(nil, "BORDER")
+	shield.stripes:SetTexture("Interface\\AddOns\\SurvivorUIClassic\\Art\\ShieldStripes")
+	shield.edge = shield:CreateTexture(nil, "ARTWORK")
+	shield.edge:SetTexture(SUIC.FLAT)
+	shield.edge:SetVertexColor(0.9, 0.97, 1, 1)
+	shield:Hide()
+end
+
+-- What the shields hold now; 0 with "Shields on your health" off.
+local function Held()
+	if not SUIC.DB().shieldBar then
+		return 0
+	end
+	return tonumber((AZS_RUN or {}).sh) or 0
+end
+
+local function UpdateShield()
+	if not shield then
+		return
+	end
+	local most = tonumber((AZS_RUN or {}).hpm) or UnitHealthMax("player") or 0
+	local held = most > 0 and Held() / most or 0
+	if held <= 0.002 or not SUIC.active then
+		shield:Hide()
+		return
+	end
+	local width = PlayerFrameHealthBar:GetWidth()
+	local health = UnitHealthMax("player") > 0 and UnitHealth("player") / UnitHealthMax("player") or 0
+	held = math.min(1, held)
+	local from, to, edge = health, health + held, health + held
+	if to > 1 then
+		from, to, edge = 1 - held, 1, 1 - held
+	end
+	local bar = PlayerFrameHealthBar
+	shield.fill:ClearAllPoints()
+	shield.fill:SetPoint("TOPLEFT", bar, "TOPLEFT", width * from, 0)
+	shield.fill:SetPoint("BOTTOMRIGHT", bar, "BOTTOMLEFT", width * to, 0)
+	shield.stripes:ClearAllPoints()
+	shield.stripes:SetPoint("TOPLEFT", bar, "TOPLEFT", width * from, 0)
+	shield.stripes:SetPoint("BOTTOMRIGHT", bar, "BOTTOMLEFT", width * to, 0)
+	shield.stripes:SetTexCoord(from, to, 0, 1)
+	shield.edge:ClearAllPoints()
+	shield.edge:SetPoint("TOPLEFT", bar, "TOPLEFT", width * edge - 1, 0)
+	shield.edge:SetPoint("BOTTOMRIGHT", bar, "BOTTOMLEFT", width * edge + 1, 0)
+	shield:Show()
+end
+
 local function UpdatePlayer()
 	if not playerText then
 		return
 	end
 	local style = SUIC.DB().playerHealth
-	Fit(playerText, Text(style, UnitHealth("player"), UnitHealthMax("player")))
+	local held = Held()
+	if held >= 1 then
+		Fit(playerText, Text(style, UnitHealth("player") + held, UnitHealthMax("player")))
+		playerText:SetTextColor(0.59, 0.82, 1)
+	else
+		Fit(playerText, Text(style, UnitHealth("player"), UnitHealthMax("player")))
+		playerText:SetTextColor(1, 1, 1)
+	end
+	UpdateShield()
 	-- The stock numbers, shown on hover, would lie on ours.
 	if PlayerFrameHealthBarText then
 		if style == "off" then
@@ -158,6 +227,21 @@ watch:SetScript("OnEvent", function()
 	else
 		UpdatePlayer()
 		UpdateTarget()
+	end
+end)
+
+-- The shields come and go with no event of their own: looked at five times a
+-- second.
+local shieldWait = 0
+watch:SetScript("OnUpdate", function()
+	shieldWait = shieldWait + arg1
+	if shieldWait >= 0.2 then
+		shieldWait = 0
+		if SUIC.active then
+			UpdatePlayer()
+		else
+			UpdateShield()
+		end
 	end
 end)
 
