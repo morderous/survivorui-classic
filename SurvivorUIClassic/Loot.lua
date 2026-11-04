@@ -113,7 +113,7 @@ local function Draw()
 				text = text.." x"..notice.count
 			end
 			if notice.new then
-				text = "|cff40ff40New!|r  "..text
+				text = "|cff40ff40"..SUIC.T("New!").."|r  "..text
 			end
 			row.text:SetText(text)
 			row.icon:SetTexture(notice.icon or "Interface\\Icons\\INV_Misc_Bag_10")

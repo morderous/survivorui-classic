@@ -54,7 +54,7 @@ header:SetHeight(64)
 header:SetPoint("TOP", panel, "TOP", 0, 12)
 local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 title:SetPoint("TOP", header, "TOP", 0, -14)
-title:SetText("Choose your interface")
+title:SetText(SUIC.T("Choose your interface"))
 
 local text = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 text:SetWidth(410)
@@ -72,7 +72,7 @@ local function Button(label, width)
 	local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	button:SetWidth(width)
 	button:SetHeight(24)
-	button:SetText(label)
+	button:SetText(SUIC.T(label))
 	return button
 end
 
@@ -86,7 +86,7 @@ for index = 1, 2 do
 	local about = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	about:SetWidth(190)
 	about:SetPoint("TOP", button, "BOTTOM", 0, -8)
-	about:SetText(option.text)
+	about:SetText(SUIC.T(option.text))
 	button.about = about
 	picks[index] = button
 end
@@ -140,11 +140,11 @@ end
 function SUIC.ShowRestart()
 	local use = SUIC.DB().use
 	if LauncherHere() then
-		text:SetText(NameOf(use).." runs from the next time the game starts. The game will close and the launcher will open it again by itself.")
-		quit:SetText("Restart game")
+		text:SetText(SUIC.TF("{1} runs from the next time the game starts. The game will close and the launcher will open it again by itself.", NameOf(use)))
+		quit:SetText(SUIC.T("Restart game"))
 	else
-		text:SetText(NameOf(use).." runs from the next time the game starts. Close the game and open it again. Until then, "..NameOf(Running()).." stays on.")
-		quit:SetText("Quit game")
+		text:SetText(SUIC.TF("{1} runs from the next time the game starts. Close the game and open it again. Until then, {2} stays on.", NameOf(use), NameOf(Running())))
+		quit:SetText(SUIC.T("Quit game"))
 	end
 	note:SetText("")
 	footer:SetText("")
@@ -165,7 +165,7 @@ local function Pick()
 	if this.use == Running() then
 		veil:Hide()
 		if not SUIC.active then
-			SUIC.Print("off: Survivor UI is in use. Type /suic to choose again.")
+			SUIC.Print(SUIC.T("off: Survivor UI is in use. Type /suic to choose again."))
 		end
 		return
 	end
@@ -179,22 +179,22 @@ end
 -- closable: asked from the menu or /suic, with a way out; at the start, none.
 function SUIC.ShowChoice(closable)
 	local db = SUIC.DB()
-	text:SetText("Survivor UI and SurvivorUI Classic are both installed. They change the same frames, so only one of them can run. Which one do you want to use?")
+	text:SetText(SUIC.T("Survivor UI and SurvivorUI Classic are both installed. They change the same frames, so only one of them can run. Which one do you want to use?"))
 	-- Off in the game's list it cannot be picked: an addon can only turn it
 	-- on for the hero played, and each hero would have its own list.
 	local _, _, _, enabled = GetAddOnInfo("SurvivorUI")
 	if not enabled then
-		note:SetText("Survivor UI is off in the game's Options, AddOns tab. Turn it on there and start the game again.")
+		note:SetText(SUIC.T("Survivor UI is off in the game's Options, AddOns tab. Turn it on there and start the game again."))
 		picks[1]:Disable()
 	else
 		picks[1]:Enable()
 		if db.use == "classic" and not SUIC.active and not SurvivorUI_CanStandBy then
-			note:SetText("This Survivor UI is too old to step aside. Update it from the launcher, or pick it here.")
+			note:SetText(SUIC.T("This Survivor UI is too old to step aside. Update it from the launcher, or pick it here."))
 		else
 			note:SetText("")
 		end
 	end
-	footer:SetText("You can change it later: Change UI, in the options.")
+	footer:SetText(SUIC.T("You can change it later: Change UI, in the options."))
 	for index = 1, 2 do
 		picks[index]:Show()
 		picks[index].about:Show()

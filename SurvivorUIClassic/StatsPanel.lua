@@ -18,7 +18,7 @@ end
 
 local function Fixed(format, scale)
 	return function(value)
-		return string.format(format, (tonumber(value) or 0) * (scale or 1))
+		return string.format(SUIC.T(format), (tonumber(value) or 0) * (scale or 1))
 	end
 end
 
@@ -53,7 +53,7 @@ SUIC.STAT_LIST = {
 SUIC.STAT_COLORS = {
 	{ "White", 1, 1, 1 },
 	{ "Grey", 0.62, 0.62, 0.62 },
-	{ "Gold", 1, 0.82, 0 },
+	{ "@color:Gold", 1, 0.82, 0 },
 	{ "Yellow", 1, 0.95, 0.42 },
 	{ "Orange", 1, 0.55, 0.1 },
 	{ "Peach", 1, 0.67, 0.38 },
@@ -117,7 +117,7 @@ local function Numbers()
 		if SUIC.StatShown(index) then
 			shown = shown + 1
 			local row = Row(shown)
-			row.name:SetText(stat[1])
+			row.name:SetText(SUIC.T(stat[1]))
 			local value = s and s[stat[2]]
 			row.value:SetText(value ~= nil and stat[3](value) or "-")
 			local color = SUIC.STAT_COLORS[SUIC.StatColor(index)]
@@ -132,7 +132,7 @@ local function Numbers()
 	end
 	panel:SetHeight(SUIC.TITLE + 10 + math.max(1, shown) * ROW)
 	local level = tonumber(AZS_RUN and AZS_RUN.lvl)
-	panel.note:SetText(level and ("Lv "..level) or "")
+	panel.note:SetText(level and SUIC.TF("Lv {1}", level) or "")
 end
 
 local function Refresh()

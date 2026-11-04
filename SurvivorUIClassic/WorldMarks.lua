@@ -166,7 +166,7 @@ local function ReadAll()
 			if On("worldLairs") then
 				spot, at = LairSpot(entry, guardians, refill)
 			end
-		elseif entry.kind == "enemy" and entry.name == ORB then
+		elseif entry.kind == "enemy" and (entry.name == ORB or entry.name == SUIC.T(ORB)) then
 			spot, at = { anchor = entry.anchorId, attachment = "overhead", lift = 0.6, look = "orb" }, entry
 		end
 		if spot then
@@ -327,7 +327,7 @@ local function Clock(seconds)
 end
 
 local function Yards(value)
-	return math.floor(value + 0.5).." yd"
+	return SUIC.TF("{1} yd", math.floor(value + 0.5))
 end
 
 -- An icon of the minimap's or ours, at a size, in the mark's middle.
@@ -375,7 +375,7 @@ local function Paint(mark, spot, x, y, yards)
 		icon:SetVertexColor(0.6, 0.6, 0.6, 0.6)
 		name:SetTextColor(0.55, 0.55, 0.55)
 		local left = spot.refill and spot.refill - GetTime()
-		below:SetText(left and left > 0 and Clock(left) or "soon")
+		below:SetText(left and left > 0 and Clock(left) or SUIC.T("soon"))
 		below:SetTextColor(RESPAWN[1], RESPAWN[2], RESPAWN[3])
 		yards = nil
 		below:Show()

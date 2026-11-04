@@ -12,7 +12,7 @@ local GAP = 5
 local MOST = 12
 local COUNT = 11                -- the count's line over the icons
 -- How many of a kind the game lets out at once (its 0.110; Survivor UI's).
-local LIMITS = { infernal = 1, doomguard = 1, felguard = 2, pit_lord = 2, water_elemental = 1, treant = 2, spirit_wolf = 2 }
+local LIMITS = { infernal = 1, doomguard = 1, felguard = 2, pit_lord = 2, dread_lord = 2, water_elemental = 1, treant = 2, spirit_wolf = 2 }
 
 local holder = CreateFrame("Frame", "SUICSummons", UIParent)
 holder:SetWidth(4 * (SIZE + GAP))
@@ -36,12 +36,12 @@ local function SlotEnter()
 		return
 	end
 	GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
-	GameTooltip:SetText(this.name)
+	GameTooltip:SetText(SUIC.Native(this.name))
 	if this.out then
-		GameTooltip:AddLine(this.out.." out"..(this.limit and (" of "..this.limit) or ""), 1, 1, 1)
+		GameTooltip:AddLine(this.limit and SUIC.TF("{1} out of {2}", this.out, this.limit) or SUIC.TF("{1} out", this.out), 1, 1, 1)
 	end
 	if this.left then
-		GameTooltip:AddLine("The first goes in "..SUIC.Clock(this.left), 0.8, 0.8, 0.8)
+		GameTooltip:AddLine(SUIC.TF("The first goes in {1}", SUIC.Clock(this.left)), 0.8, 0.8, 0.8)
 	end
 	GameTooltip:Show()
 end

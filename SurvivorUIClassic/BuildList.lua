@@ -72,11 +72,11 @@ end
 local critHover
 
 local function Head(label, value)
-	GameTooltip:AddDoubleLine(label, value, 1, 0.82, 0, 1, 1, 1)
+	GameTooltip:AddDoubleLine(SUIC.T(label), value, 1, 0.82, 0, 1, 1, 1)
 end
 
 local function Line(label, value)
-	GameTooltip:AddDoubleLine("   "..label, value, 0.75, 0.75, 0.75, 1, 1, 1)
+	GameTooltip:AddDoubleLine("   "..SUIC.T(label), value, 0.75, 0.75, 0.75, 1, 1, 1)
 end
 
 local function CritCard(zone)
@@ -97,7 +97,7 @@ local function CritCard(zone)
 	Head("Critical strikes", one.crits)
 	if one.crits > 0 then
 		Line("Biggest", SUIC.Short(one.best))
-		Line("Beaten last", SUIC.Clock((AZS_GetRunTime and AZS_GetRunTime() or 0) - one.bestAt).." ago")
+		Line("Beaten last", SUIC.TF("{1} ago", SUIC.Clock((AZS_GetRunTime and AZS_GetRunTime() or 0) - one.bestAt)))
 		Line("Last", SUIC.Short(one.lastCrit))
 		Line("Average", SUIC.Short(one.critSum / one.crits))
 		Line("Smallest", SUIC.Short(one.least))
@@ -189,9 +189,9 @@ local function Cooldown(entry)
 	if seconds <= 0 then
 		return ""
 	elseif seconds < 10 then
-		return string.format("%.1fs", seconds)
+		return SUIC.TF("{1}s", string.format("%.1f", seconds))
 	end
-	return math.floor(seconds + 0.5).."s"
+	return SUIC.TF("{1}s", math.floor(seconds + 0.5))
 end
 
 -- A name that fits its room: whole, else its words after the first cut to
@@ -207,14 +207,14 @@ local function Shorten(text, name)
 			first = false
 			return word
 		end
-		if string.len(word) > 4 then
-			return string.sub(word, 1, 3).."."
+		if SUIC.Length(word) > 4 then
+			return SUIC.Cut(word, 3).."."
 		end
 		return word
 	end)
 	text:SetText(short)
-	while text:GetStringWidth() > NAME_ROOM and string.len(short) > 4 do
-		short = string.sub(short, 1, string.len(short) - 1)
+	while text:GetStringWidth() > NAME_ROOM and SUIC.Length(short) > 4 do
+		short = SUIC.Cut(short, SUIC.Length(short) - 1)
 		text:SetText(short..".")
 	end
 end
@@ -222,14 +222,14 @@ end
 local function Fill(row, entry, slot, racial)
 	row.slot = slot
 	row.icon:SetTexture(GetActionTexture(slot) or EMPTY)
-	row.spell = SpellName(slot) or entry.key or "?"
+	row.spell = SUIC.Native(SpellName(slot) or entry.key or "?")
 	Shorten(row.name, row.spell)
 	if racial then
 		row.name:SetTextColor(0.75, 0.75, 0.75)
 	else
 		row.name:SetTextColor(1, 1, 1)
 	end
-	row.rank:SetText(entry.rank and ("R"..entry.rank) or "")
+	row.rank:SetText(entry.rank and SUIC.TF("R{1}", entry.rank) or "")
 	row.cd:SetText(Cooldown(entry))
 	row.key = entry.key
 	row:Show()
@@ -238,7 +238,7 @@ end
 local function Empty(row)
 	row.slot = nil
 	row.icon:SetTexture(EMPTY)
-	row.name:SetText("|cff8a8a8aEmpty|r")
+	row.name:SetText(SUIC.T("|cff8a8a8aEmpty|r"))
 	row.rank:SetText("")
 	row.cd:SetText("")
 	row.crit:SetText("")
@@ -250,9 +250,9 @@ end
 local function Numbers()
 	local s = AZS_STATS
 	if s and s.dmg then
-		stats:SetText("|cffffd100Damage|r "..(s.dmg >= 1 and "+" or "")..Pct(s.dmg - 1)
-			.."    |cffffd100Crit|r "..string.format("%.1f%%", (s.crit or 0) * 100)
-			.."    |cffffd100Crit Dmg|r "..Pct(s.cm or 0))
+		stats:SetText("|cffffd100"..SUIC.T("Damage").."|r "..(s.dmg >= 1 and "+" or "")..Pct(s.dmg - 1)
+			.."    |cffffd100"..SUIC.T("Crit").."|r "..string.format("%.1f%%", (s.crit or 0) * 100)
+			.."    |cffffd100"..SUIC.T("Crit Dmg").."|r "..Pct(s.cm or 0))
 	else
 		stats:SetText("")
 	end

@@ -42,13 +42,35 @@ local WORDS = {
 	{ "live", "LIFE" }, { "damage", "DMG" },
 }
 local MORE = { "more", "increase", "improve", "restore", "heals" }
+-- The same in the game's Russian lines ("+6% к критическому урону"): parts
+-- of words, their first letter left out where a line may begin with it (no
+-- string.lower for Cyrillic).
+local WORDS_RU = {
+	{ "глуш", "STUN" }, { "бездвиж", "ROOT" }, { "щит", "SHIELD" }, { "оглощ", "ABSORB" },
+	{ "зрыв", "BOOM" }, { "ерескак", "LEAP" }, { "кровотеч", "BLEED" },
+	{ "ещё раз", "AGAIN" }, { "повторно", "AGAIN" }, { "длительн", "DUR" },
+	{ "за убийство", "HP/KILL" }, { "каждое убийство", "HP/KILL" },
+	{ "ампир", "LEECH" }, { "критическому урону", "CRIT DMG" }, { "урону критических", "CRIT DMG" },
+	{ "критического урона", "CRIT DMG" }, { "критическ", "CRIT" }, { "крит", "CRIT" },
+	{ "восстановлен", "CDR" }, { "снижени", "DMG RED" }, { "получаемого урона", "DMG RED" },
+	{ "брон", "DMG RED" }, { "област", "AREA" }, { "цел", "TGT" }, { "дважды", "ECHO" },
+	{ "эх", "ECHO" }, { "передвижени", "SPD" }, { "скорост", "SPD" }, { "в секунду", "REGEN" },
+	{ "здоров", "HP" }, { "подбор", "PICK" }, { "опыт", "XP" }, { "золот", "GOLD" },
+	{ "удач", "LUCK" }, { "сцел", "HEAL" }, { "лечени", "HEAL" }, { "шип", "THORNS" },
+	{ "жизн", "LIFE" }, { "урон", "DMG" },
+}
+local MORE_RU = { "больше", "величив", "лучш", "восстанавл", "сцеля" }
 
 local function Tag(text)
 	local lower = string.lower(text)
 	local word
-	for index = 1, table.getn(WORDS) do
-		if string.find(lower, WORDS[index][1], 1, true) then
-			word = WORDS[index][2]
+	local words, more = WORDS, MORE
+	if SUIC.Language() == "ru" then
+		words, more = WORDS_RU, MORE_RU
+	end
+	for index = 1, table.getn(words) do
+		if string.find(lower, words[index][1], 1, true) then
+			word = words[index][2]
 			break
 		end
 	end
@@ -58,18 +80,24 @@ local function Tag(text)
 	end
 	local first = string.sub(value, 1, 1)
 	if first ~= "+" and first ~= "-" then
-		for index = 1, table.getn(MORE) do
-			if string.find(lower, MORE[index], 1, true) then
+		for index = 1, table.getn(more) do
+			if string.find(lower, more[index], 1, true) then
 				value = "+"..value
 				break
 			end
 		end
 	end
-	return value.." "..word
+	return value.." "..SUIC.T(word)
 end
 
 local scan = CreateFrame("GameTooltip", "SUICJewelryTip", nil, "GameTooltipTemplate")
 local known = {}                -- [item link] = short text
+-- Read again in another language.
+table.insert(SUIC.OnLanguage, function()
+	for link in pairs(known) do
+		known[link] = nil
+	end
+end)
 
 local function Short(slot, link)
 	if known[link] then
@@ -137,8 +165,8 @@ local function Fit(text, name, color)
 		name = spell
 		text:SetText("|c"..color..name.."|r")
 	end
-	while text:GetStringWidth() > NAME_ROOM and string.len(name) > 4 do
-		name = string.sub(name, 1, string.len(name) - 1)
+	while text:GetStringWidth() > NAME_ROOM and SUIC.Length(name) > 4 do
+		name = SUIC.Cut(name, SUIC.Length(name) - 1)
 		text:SetText("|c"..color..name.."...|r")
 	end
 end
@@ -148,8 +176,8 @@ local function RowEnter()
 	if GetInventoryItemLink("player", this.slot) then
 		GameTooltip:SetInventoryItem("player", this.slot)
 	else
-		GameTooltip:SetText(this.label)
-		GameTooltip:AddLine("Empty", 0.6, 0.6, 0.6)
+		GameTooltip:SetText(SUIC.T(this.label))
+		GameTooltip:AddLine(SUIC.T("Empty"), 0.6, 0.6, 0.6)
 	end
 	GameTooltip:Show()
 end
@@ -198,7 +226,7 @@ local function Draw()
 			row.gives:SetText(gives)
 		else
 			row.icon:SetTexture(row.empty)
-			row.name:SetText("|cff8a8a8a"..row.label.."|r")
+			row.name:SetText("|cff8a8a8a"..SUIC.T(row.label).."|r")
 			row.name:SetPoint("LEFT", row.icon, "RIGHT", 5, 0)
 			row.gives:SetText("")
 		end

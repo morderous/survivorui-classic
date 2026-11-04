@@ -164,9 +164,9 @@ local function RowEnter()
 		GameTooltip:SetText(this.itemName or "?", r, g, b)
 		local quality = QUALITIES[string.lower(this.color or "")]
 		if quality then
-			GameTooltip:AddLine(quality, r, g, b)
+			GameTooltip:AddLine(SUIC.T(quality), r, g, b)
 		end
-		GameTooltip:AddLine("Its details show here once you have worn it in a run.", 0.62, 0.62, 0.68, 1)
+		GameTooltip:AddLine(SUIC.T("Its details show here once you have worn it in a run."), 0.62, 0.62, 0.68, 1)
 	end
 	GameTooltip:Show()
 end
@@ -207,7 +207,7 @@ head:SetWidth(40)
 head:EnableMouse(true)
 
 local function Draw()
-	panel.note:SetText(Amount(earned.total).." marks")
+	panel.note:SetText(SUIC.TF("{1} marks", Amount(earned.total)))
 	head:SetWidth(panel.note:GetStringWidth() + 8)
 	local count = math.min(Fit(), table.getn(entries))
 	for index = 1, count do
@@ -222,7 +222,7 @@ local function Draw()
 			extra = extra.."  |cffffd100+"..Amount(entry.worth).."|r"
 		end
 		if entry.new then
-			extra = extra.."  |cff40ff40New!|r"
+			extra = extra.."  |cff40ff40"..SUIC.T("New!").."|r"
 		end
 		row.extra:SetText(extra)
 		local room = W - 2 * PAD - ICON - 4 - CLOCK - (extra ~= "" and row.extra:GetStringWidth() or 0)
@@ -363,20 +363,20 @@ end
 
 head:SetScript("OnEnter", function()
 	GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-	GameTooltip:SetText(Amount(earned.total).." marks this run")
+	GameTooltip:SetText(SUIC.TF("{1} marks this run", Amount(earned.total)))
 	local count = table.getn(earned)
 	for index = math.max(1, count - HISTORY + 1), count do
 		local each = earned[index]
-		local name = each.boss or (each.paid and "A boss" or "Repeated loot")
+		local name = each.boss or SUIC.T(each.paid and "A boss" or "Repeated loot")
 		GameTooltip:AddDoubleLine("|cff8c8c96"..(each.at and SUIC.Clock(each.at) or "").."|r  "..name,
 			"+"..Amount(each.amount), 1, 1, 1, 1, 0.82, 0)
 	end
 	if count == 0 then
-		GameTooltip:AddLine("A boss's fall brings them, and a piece you already have.", 0.62, 0.62, 0.68, 1)
+		GameTooltip:AddLine(SUIC.T("A boss's fall brings them, and a piece you already have."), 0.62, 0.62, 0.68, 1)
 	end
 	local stock = Stocks()[ClassKey()]
 	if stock then
-		GameTooltip:AddDoubleLine("Class total", Amount(stock), 0.8, 0.8, 0.84, 1, 0.82, 0)
+		GameTooltip:AddDoubleLine(SUIC.T("Class total"), Amount(stock), 0.8, 0.8, 0.84, 1, 0.82, 0)
 	end
 	GameTooltip:Show()
 end)
@@ -477,7 +477,8 @@ SUIC.OnLootLine(function(text)
 	end
 	CheckRun()
 	-- "<hero> enters <zone>. Move to begin.": a new run, an empty list.
-	if string.find(text, "Move to begin", 1, true) then
+	-- The game's Russian words too.
+	if string.find(text, "Move to begin", 1, true) or string.find(text, "Двигайтесь, чтобы начать", 1, true) then
 		NewRun()
 	elseif string.find(text, "[", 1, true) then
 		Add(text)

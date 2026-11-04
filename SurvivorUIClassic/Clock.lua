@@ -147,8 +147,8 @@ end
 
 box:SetScript("OnEnter", function()
 	GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-	GameTooltip:SetText("Your time")
-	GameTooltip:AddLine("Click for your computer's time, or untick it and slide to the time zone you want, and for 24 or 12 hours.", 1, 1, 1, 1)
+	GameTooltip:SetText(SUIC.T("Your time"))
+	GameTooltip:AddLine(SUIC.T("Click for your computer's time, or untick it and slide to the time zone you want, and for 24 or 12 hours."), 1, 1, 1, 1)
 	GameTooltip:Show()
 end)
 box:SetScript("OnLeave", function() GameTooltip:Hide() end)

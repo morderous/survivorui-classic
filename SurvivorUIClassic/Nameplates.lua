@@ -7,8 +7,13 @@
 -- V took it, goes back to Y.
 
 BINDING_HEADER_SUIC = "SurvivorUI Classic"
-BINDING_NAME_SUIC_ENEMYPLATES = "Enemy nameplates on and off"
-BINDING_NAME_SUIC_FRIENDPLATES = "Friendly nameplates on and off"
+-- In the game's language once it is known (Locale.lua).
+local function BindingNames()
+	BINDING_NAME_SUIC_ENEMYPLATES = SUIC.T("Enemy nameplates on and off")
+	BINDING_NAME_SUIC_FRIENDPLATES = SUIC.T("Friendly nameplates on and off")
+end
+BindingNames()
+table.insert(SUIC.OnLanguage, BindingNames)
 
 function SUIC_ToggleEnemyPlates()
 	if NAMEPLATES_ON then

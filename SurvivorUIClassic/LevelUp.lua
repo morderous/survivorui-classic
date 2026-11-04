@@ -52,7 +52,7 @@ level:SetTextColor(0.8, 0.7, 0.55)
 
 local title = SUIC.Text(button, "GameFontNormalLarge")
 title:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 8, -1)
-title:SetText("Level Up!")
+title:SetText(SUIC.T("Level Up!"))
 
 button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
 
@@ -98,6 +98,17 @@ local function KeyWords()
 end
 
 local shownKey
+-- The icon and the words as long as they are in the game's language, at
+-- least BEFORE_CAP (English's as it was).
+local function BeforeCap()
+	if not SUIC.Spoken() then
+		return BEFORE_CAP
+	end
+	return math.max(BEFORE_CAP, 42 + math.ceil(title:GetStringWidth() or 0) + 8)
+end
+table.insert(SUIC.OnLanguage, function()
+	shownKey = nil
+end)
 local function ShowKey()
 	local key = KeyWords()
 	if key == shownKey then
@@ -116,10 +127,10 @@ local function ShowKey()
 		width = width + math.mod(width, 2)
 		cap:SetWidth(width)
 		cap:Show()
-		button:SetWidth(math.max(WIDTH, BEFORE_CAP + width + CAP_INSET))
+		button:SetWidth(math.max(WIDTH, BeforeCap() + width + CAP_INSET))
 	else
 		cap:Hide()
-		button:SetWidth(WIDTH)
+		button:SetWidth(math.max(WIDTH, BeforeCap() + 4))
 	end
 end
 
@@ -134,9 +145,13 @@ button:SetScript("OnClick", function()
 end)
 button:SetScript("OnEnter", function()
 	GameTooltip:SetOwner(this, "ANCHOR_TOP")
-	GameTooltip:SetText("Level Up!")
+	GameTooltip:SetText(SUIC.T("Level Up!"))
 	local key = KeyWords()
-	GameTooltip:AddLine(Waiting().." level(s) waiting. Click"..(key and ", or press "..key or "")..", to choose.", 1, 1, 1, 1)
+	if key then
+		GameTooltip:AddLine(SUIC.TF("{1} level(s) waiting. Click, or press {2}, to choose.", Waiting(), key), 1, 1, 1, 1)
+	else
+		GameTooltip:AddLine(SUIC.TF("{1} level(s) waiting. Click, to choose.", Waiting()), 1, 1, 1, 1)
+	end
 	GameTooltip:Show()
 end)
 button:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -153,7 +168,7 @@ ticker:SetScript("OnUpdate", function()
 	local choosing = AZS_GetPhase and AZS_GetPhase() == "choosing"
 	if (waiting > 0 and SUIC.InRun() and not choosing) or SUIC.MoveMode() then
 		count:SetText(waiting > 0 and waiting or "")
-		level:SetText("LEVEL "..(UnitLevel("player") or ""))
+		level:SetText(SUIC.TF("LEVEL {1}", UnitLevel("player") or ""))
 		local beat = 0.5 + 0.5 * math.sin(GetTime() * 3)
 		glow:SetAlpha(0.15 + 0.25 * beat)
 		button:SetBackdropBorderColor(0.75 + 0.25 * beat, 0.55 + 0.25 * beat, 0.25 + 0.1 * beat, 1)

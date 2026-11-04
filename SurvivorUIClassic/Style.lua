@@ -25,7 +25,7 @@ local EDGES = {
 	gold = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
 	tooltip = "Interface\\Tooltips\\UI-Tooltip-Border",
 }
-SUIC.BORDER_NAMES = { grey = "Grey and gold", gold = "Gold", tooltip = "Tooltip" }
+SUIC.BORDER_NAMES = { grey = "Grey and gold", gold = "@border:Gold", tooltip = "@border:Tooltip" }
 SUIC.BORDER_ORDER = { "grey", "gold", "tooltip" }
 
 local panels = {}
@@ -100,7 +100,7 @@ function SUIC.Window(name, title, width)
 	Paint(panel)
 	panel.title = SUIC.Text(panel, "GameFontNormal")
 	panel.title:SetPoint("TOPLEFT", panel, "TOPLEFT", SUIC.PAD, -7)
-	panel.title:SetText(title or "")
+	panel.title:SetText(SUIC.T(title or ""))
 	panel.note = SUIC.Text(panel, "GameFontHighlightSmall")
 	panel.note:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -SUIC.PAD, -8)
 	panel.rule = SUIC.Rule(panel)
@@ -147,7 +147,7 @@ function SUIC.Dialog(name, title, width, height)
 	header:SetPoint("TOP", window, "TOP", 0, 12)
 	local heading = window:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	heading:SetPoint("TOP", header, "TOP", 0, -14)
-	heading:SetText(title)
+	heading:SetText(SUIC.T(title))
 	window.heading = heading
 	local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
 	close:SetPoint("TOPRIGHT", window, "TOPRIGHT", -6, -6)

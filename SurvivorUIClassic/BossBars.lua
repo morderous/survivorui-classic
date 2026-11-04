@@ -84,16 +84,16 @@ local function EntryEnter()
 	SUIC.LightPlate(unit.name, unit.id)
 	GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
 	GameTooltip:SetText(unit.name or "?")
-	GameTooltip:AddLine(KIND_NAMES[unit.kind] or "", 1, 0.82, 0)
+	GameTooltip:AddLine(SUIC.T(KIND_NAMES[unit.kind] or ""), 1, 0.82, 0)
 	local hpm = tonumber(unit.hpm) or 0
 	if hpm > 0 then
 		GameTooltip:AddLine(SUIC.Short(unit.hp).." / "..SUIC.Short(hpm).."  ("
 			..math.floor((tonumber(unit.hp) or 0) / hpm * 100 + 0.5).."%)", 1, 1, 1)
 	end
 	if unit.kind ~= "guardian" and unit.state == 1 then
-		GameTooltip:AddLine("Enraged", 1, 0.5, 0.15)
+		GameTooltip:AddLine(SUIC.T("Enraged"), 1, 0.5, 0.15)
 	end
-	GameTooltip:AddLine("Click to target it.", 0.7, 0.7, 0.7)
+	GameTooltip:AddLine(SUIC.T("Click to target it."), 0.7, 0.7, 0.7)
 	GameTooltip:Show()
 end
 
@@ -265,7 +265,7 @@ local function Fill(entry, unit, target, mouse)
 		entry.kind = unit.kind
 		local fill = FILL_COLORS[unit.kind] or FILL_COLORS.elite
 		Tint(entry.fill, fill[1], fill[2], fill[3])
-		entry.kindName:SetText(unit.kind == "final" and "Final boss" or "")
+		entry.kindName:SetText(unit.kind == "final" and SUIC.T("Final boss") or "")
 	end
 	entry.name:SetText(unit.name or "?")
 	local color = NAME_COLORS[unit.kind] or NAME_COLORS.elite

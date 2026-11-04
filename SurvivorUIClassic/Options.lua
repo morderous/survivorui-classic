@@ -13,7 +13,7 @@ local window = SUIC.Dialog("SUICOptions", "SurvivorUI Classic", 600, 500)
 
 local version = window:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 version:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", 20, 18)
-version:SetText("Version "..SUIC.VERSION)
+version:SetText(SUIC.TF("Version {1}", SUIC.VERSION))
 
 -- A line between the tabs and the page.
 local divider = window:CreateTexture(nil, "ARTWORK")
@@ -45,7 +45,7 @@ end
 local function Header(page, text)
 	page.y = page.y - 8
 	local label = page:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	label:SetText(text)
+	label:SetText(SUIC.T(text))
 	Place(page, label, 16)
 	local rule = SUIC.Rule(page)
 	rule:SetWidth(PAGE_WIDTH)
@@ -56,7 +56,7 @@ local function Note(page, text)
 	local note = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	note:SetWidth(PAGE_WIDTH)
 	note:SetJustifyH("LEFT")
-	note:SetText(text)
+	note:SetText(SUIC.T(text))
 	note:SetTextColor(0.75, 0.75, 0.75)
 	Place(page, note, SUIC.Lines(note, PAGE_WIDTH) * 12 + 4)
 end
@@ -64,8 +64,8 @@ end
 local function Check(page, label, get, set, tip)
 	local name = NextName()
 	local check = CreateFrame("CheckButton", name, page, "OptionsCheckButtonTemplate")
-	getglobal(name.."Text"):SetText(label)
-	check.tooltipText = tip
+	getglobal(name.."Text"):SetText(SUIC.T(label))
+	check.tooltipText = tip and SUIC.T(tip)
 	check:SetScript("OnClick", function()
 		set(this:GetChecked() and true or false)
 	end)
@@ -98,7 +98,7 @@ local function Slider(page, label, low, high, step, get, set, shown)
 	local text = getglobal(name.."Text")
 	slider:SetScript("OnValueChanged", function()
 		local value = math.floor(this:GetValue() / step + 0.5) * step
-		text:SetText(label..": "..shown(value))
+		text:SetText(SUIC.T(label)..": "..shown(value))
 		if not this.reading then
 			set(value)
 		end
@@ -107,7 +107,7 @@ local function Slider(page, label, low, high, step, get, set, shown)
 	Updates(page, function()
 		slider.reading = true
 		slider:SetValue(get())
-		text:SetText(label..": "..shown(get()))
+		text:SetText(SUIC.T(label)..": "..shown(get()))
 		slider.reading = nil
 	end)
 	return slider
@@ -127,7 +127,7 @@ end
 -- A row of radio buttons: one of choices ({ value, label } each).
 local function Radio(page, label, choices, get, set)
 	local text = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	text:SetText(label)
+	text:SetText(SUIC.T(label))
 	Place(page, text, 16, 4)
 	local buttons = {}
 	local x = 4
@@ -136,7 +136,7 @@ local function Radio(page, label, choices, get, set)
 		local button = CreateFrame("CheckButton", name, page, "UIRadioButtonTemplate")
 		button.value = choices[index][1]
 		local caption = getglobal(name.."Text")
-		caption:SetText(choices[index][2])
+		caption:SetText(SUIC.T(choices[index][2]))
 		button:SetPoint("TOPLEFT", page, "TOPLEFT", x, page.y)
 		x = x + 24 + caption:GetStringWidth() + 14
 		button:SetScript("OnClick", function()
@@ -160,7 +160,7 @@ local function Button(page, label, width, onClick, x)
 	local button = CreateFrame("Button", nil, page, "UIPanelButtonTemplate")
 	button:SetWidth(width)
 	button:SetHeight(22)
-	button:SetText(label)
+	button:SetText(SUIC.T(label))
 	button:SetScript("OnClick", onClick)
 	button:SetPoint("TOPLEFT", page, "TOPLEFT", x or 0, page.y)
 	return button
@@ -171,7 +171,7 @@ end
 local dropMenu = CreateFrame("Frame", "SUICOptionsDrop", UIParent, "UIDropDownMenuTemplate")
 local function Dropdown(page, label, choices, get, set)
 	local text = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	text:SetText(label)
+	text:SetText(SUIC.T(label))
 	Place(page, text, 16, 4)
 	local button = CreateFrame("Button", nil, page, "UIPanelButtonTemplate")
 	button:SetWidth(120)
@@ -181,7 +181,7 @@ local function Dropdown(page, label, choices, get, set)
 	local function LabelOf(value)
 		for index = 1, table.getn(choices) do
 			if choices[index][1] == value then
-				return choices[index][2]
+				return SUIC.T(choices[index][2])
 			end
 		end
 		return tostring(value)
@@ -193,7 +193,7 @@ local function Dropdown(page, label, choices, get, set)
 	button:SetScript("OnClick", function()
 		UIDropDownMenu_Initialize(dropMenu, function()
 			for index = 1, table.getn(choices) do
-				UIDropDownMenu_AddButton({ text = choices[index][2], func = Pick, arg1 = choices[index][1],
+				UIDropDownMenu_AddButton({ text = SUIC.T(choices[index][2]), func = Pick, arg1 = choices[index][1],
 					checked = get() == choices[index][1] })
 			end
 		end, "MENU")
@@ -369,7 +369,7 @@ PAGES[9] = { "Damage meter", "Damage done, healing, the last boss fight and the 
 	end, function(value) return tostring(value) end)
 	local sizes = {}
 	for size = 8, 14 do
-		table.insert(sizes, { size, size..(size == 10 and " (default)" or "") })
+		table.insert(sizes, { size, size == 10 and SUIC.TF("{1} (default)", size) or tostring(size) })
 	end
 	Dropdown(page, "Font size", sizes, function() return tonumber(SUIC.DB().meterFont) or 10 end, function(value)
 		SUIC.DB().meterFont = value
@@ -429,8 +429,8 @@ PAGES[14] = { "Nameplates", "Plates over the enemies and the friends: red for th
 	Updates(page, function()
 		local enemy = GetBindingKey and GetBindingKey("SUIC_ENEMYPLATES") or nil
 		local friend = GetBindingKey and GetBindingKey("SUIC_FRIENDPLATES") or nil
-		keys:SetText("|cffffd100"..(enemy or "No key").."|r   shows or hides the enemies' nameplates\n"
-			.."|cffffd100"..(friend or "No key").."|r   shows or hides the friends' nameplates")
+		keys:SetText("|cffffd100"..(enemy or SUIC.T("No key")).."|r   "..SUIC.T("shows or hides the enemies' nameplates").."\n"
+			.."|cffffd100"..(friend or SUIC.T("No key")).."|r   "..SUIC.T("shows or hides the friends' nameplates"))
 	end)
 	Note(page, "Each on its own: one never hides the other. Set the keys again in the game's Key Bindings, under SurvivorUI Classic.")
 end }
@@ -586,7 +586,7 @@ local function Palette()
 		end)
 		square:SetScript("OnEnter", function()
 			GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
-			GameTooltip:SetText(this.label)
+			GameTooltip:SetText(SUIC.T(this.label))
 			GameTooltip:Show()
 		end)
 		square:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -610,7 +610,7 @@ local STATS_PAGE = { "Stats panel", "Your numbers on the screen during a run, in
 		check:SetWidth(22)
 		check:SetHeight(22)
 		check:SetPoint("TOPLEFT", page, "TOPLEFT", column * half, y)
-		getglobal(name.."Text"):SetText(SUIC.STAT_LIST[index][1])
+		getglobal(name.."Text"):SetText(SUIC.T(SUIC.STAT_LIST[index][1]))
 		check:SetScript("OnClick", function()
 			SUIC.DB().statsShown[SUIC.STAT_LIST[stat][1]] = this:GetChecked() and true or false
 			SUIC.RefreshStatsPanel()
@@ -686,12 +686,12 @@ local function Build(index)
 	page.updates = {}
 	page.y = 0
 	local title = page:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	title:SetText(spec[1])
+	title:SetText(SUIC.T(spec[1]))
 	Place(page, title, 22)
 	local about = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	about:SetWidth(PAGE_WIDTH)
 	about:SetJustifyH("LEFT")
-	about:SetText(spec[2])
+	about:SetText(SUIC.T(spec[2]))
 	Place(page, about, SUIC.Lines(about, PAGE_WIDTH) * 12 + 8)
 	spec[3](page)
 	page:SetScript("OnShow", function()
@@ -726,7 +726,7 @@ for index = 1, table.getn(PAGES) do
 	tab:SetPoint("TOPLEFT", window, "TOPLEFT", 18, -36 - (index - 1) * 22)
 	tab.text = tab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	tab.text:SetPoint("LEFT", tab, "LEFT", 8, 0)
-	tab.text:SetText(PAGES[index][1])
+	tab.text:SetText(SUIC.T(PAGES[index][1]))
 	tab:SetHighlightTexture(HIGHLIGHT, "ADD")
 	tab.selected = tab:CreateTexture(nil, "BACKGROUND")
 	tab.selected:SetTexture(HIGHLIGHT)
@@ -750,15 +750,15 @@ if otherReason ~= "MISSING" then
 	change:SetWidth(LEFT - 34)
 	change:SetHeight(22)
 	change:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", 18, 18)
-	change:SetText("Change UI")
+	change:SetText(SUIC.T("Change UI"))
 	change:SetScript("OnClick", function()
 		window:Hide()
 		SUIC.ShowChoice(true)
 	end)
 	change:SetScript("OnEnter", function()
 		GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
-		GameTooltip:SetText("Change UI")
-		GameTooltip:AddLine("Pick SurvivorUI Classic or Survivor UI. The other one runs from the next time the game starts.", 1, 1, 1, 1)
+		GameTooltip:SetText(SUIC.T("Change UI"))
+		GameTooltip:AddLine(SUIC.T("Pick SurvivorUI Classic or Survivor UI. The other one runs from the next time the game starts."), 1, 1, 1, 1)
 		GameTooltip:Show()
 	end)
 	change:SetScript("OnLeave", function() GameTooltip:Hide() end)

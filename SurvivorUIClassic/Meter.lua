@@ -73,9 +73,9 @@ fold:SetHeight(14)
 fold:SetPoint("LEFT", arrow, "RIGHT", 2, 0)
 fold:SetScript("OnEnter", function()
 	GameTooltip:SetOwner(this, "ANCHOR_TOP")
-	GameTooltip:SetText("Others")
-	GameTooltip:AddLine("The lines under "..(tonumber(SUIC.DB().meterFoldShare) or 10).."% of the total, folded into one.", 1, 1, 1, 1)
-	GameTooltip:AddLine(SUIC.DB().meterFold and "On: click to show them all." or "Off: click to fold them.", 0.7, 0.7, 0.7)
+	GameTooltip:SetText(SUIC.T("Others"))
+	GameTooltip:AddLine(SUIC.TF("The lines under {1}% of the total, folded into one.", tonumber(SUIC.DB().meterFoldShare) or 10), 1, 1, 1, 1)
+	GameTooltip:AddLine(SUIC.T(SUIC.DB().meterFold and "On: click to show them all." or "Off: click to fold them."), 0.7, 0.7, 0.7)
 	GameTooltip:Show()
 end)
 fold:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -105,9 +105,9 @@ reset:GetNormalTexture():SetTexCoord(0.09375, 0.90625, 0.09375, 0.875)
 reset:GetPushedTexture():SetTexCoord(0.09375, 0.90625, 0.09375, 0.875)
 reset:SetScript("OnEnter", function()
 	GameTooltip:SetOwner(this, "ANCHOR_TOP")
-	GameTooltip:SetText("Reset")
-	GameTooltip:AddLine("Damage Done and DPS count from now on.", 1, 1, 1, 1)
-	GameTooltip:AddLine("A new run starts them over by itself.", 0.7, 0.7, 0.7, 1)
+	GameTooltip:SetText(SUIC.T("Reset"))
+	GameTooltip:AddLine(SUIC.T("Damage Done and DPS count from now on."), 1, 1, 1, 1)
+	GameTooltip:AddLine(SUIC.T("A new run starts them over by itself."), 0.7, 0.7, 0.7, 1)
 	GameTooltip:Show()
 end)
 reset:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -152,18 +152,18 @@ local function LineEnter()
 		GameTooltip:SetText(entry.name)
 		for index = 1, table.getn(entry.folded) do
 			local each = entry.folded[index]
-			GameTooltip:AddDoubleLine(each.name or "?", SUIC.Short(each.dmg).."  "
+			GameTooltip:AddDoubleLine(SUIC.Native(each.name or "?"), SUIC.Short(each.dmg).."  "
 				..math.floor((tonumber(each.share) or 0) * 100 + 0.5).."%", 1, 1, 1, 0.8, 0.8, 0.8)
 		end
 		GameTooltip:Show()
 		return
 	end
-	GameTooltip:SetText(entry.name or "?")
-	GameTooltip:AddDoubleLine("Total", SUIC.Short(entry.dmg), 1, 0.82, 0, 1, 1, 1)
-	GameTooltip:AddDoubleLine("Per second", SUIC.Short(entry.dps), 1, 0.82, 0, 1, 1, 1)
-	GameTooltip:AddDoubleLine("Share", math.floor((tonumber(entry.share) or 0) * 100 + 0.5).."%", 1, 0.82, 0, 1, 1, 1)
+	GameTooltip:SetText(SUIC.Native(entry.name or "?"))
+	GameTooltip:AddDoubleLine(SUIC.T("Total"), SUIC.Short(entry.dmg), 1, 0.82, 0, 1, 1, 1)
+	GameTooltip:AddDoubleLine(SUIC.T("Per second"), SUIC.Short(entry.dps), 1, 0.82, 0, 1, 1, 1)
+	GameTooltip:AddDoubleLine(SUIC.T("Share"), math.floor((tonumber(entry.share) or 0) * 100 + 0.5).."%", 1, 0.82, 0, 1, 1, 1)
 	if entry.top and entry.top ~= "" then
-		GameTooltip:AddDoubleLine("Best spell", entry.top, 1, 0.82, 0, 1, 1, 1)
+		GameTooltip:AddDoubleLine(SUIC.T("Best spell"), SUIC.Native(entry.top), 1, 0.82, 0, 1, 1, 1)
 	end
 	GameTooltip:Show()
 end
@@ -249,10 +249,10 @@ local function SayName(line, name, tag)
 	if line.left:GetStringWidth() <= line.room then
 		return
 	end
-	local kept = string.len(name)
+	local kept = SUIC.Length(name)
 	while kept > 1 do
 		kept = kept - 1
-		line.left:SetText(string.sub(name, 1, kept).."...")
+		line.left:SetText(SUIC.Cut(name, kept).."...")
 		if line.left:GetStringWidth() <= line.room then
 			return
 		end
@@ -382,11 +382,11 @@ local function Tag(entry)
 	if tonumber(entry.proc) ~= 1 then
 		return ""
 	elseif NECKS[name] or string.find(name, ": ", 1, true) then
-		return " |cffd0d0d0(neck)|r"
+		return " |cffd0d0d0("..SUIC.T("neck")..")|r"
 	elseif (SUIC_TALENT_ICONS and SUIC_TALENT_ICONS[name]) or SUIC.MeterTalent(name) then
-		return " |cffd0d0d0(talent)|r"
+		return " |cffd0d0d0("..SUIC.T("talent")..")|r"
 	end
-	return " |cffd0d0d0(proc)|r"
+	return " |cffd0d0d0("..SUIC.T("proc")..")|r"
 end
 
 local function Fill(line, entry, index, top, mode)
@@ -412,7 +412,7 @@ local function Fill(line, entry, index, top, mode)
 	if entry.folded then
 		SayName(line, entry.name, "")
 	else
-		SayName(line, index..". "..(entry.name or "?"), Tag(entry))
+		SayName(line, index..". "..SUIC.Native(entry.name or "?"), Tag(entry))
 	end
 	line:Show()
 end
@@ -467,7 +467,7 @@ local function Folded(data, mode)
 	if table.getn(others) < 2 then
 		return data
 	end
-	local sum = { name = "Others ("..table.getn(others)..")", dmg = 0, dps = 0, share = 0, folded = others,
+	local sum = { name = SUIC.TF("Others ({1})", table.getn(others)), dmg = 0, dps = 0, share = 0, folded = others,
 		perSecond = others[1].perSecond }
 	for index = 1, table.getn(others) do
 		sum.dmg = sum.dmg + (tonumber(others[index].dmg) or 0)
@@ -527,7 +527,7 @@ local function Draw()
 	end
 	local data, sum, perSecond = Data(mode)
 	data = data or {}
-	panel.title:SetText(mode.name)
+	panel.title:SetText(SUIC.T(mode.name))
 	title:SetWidth(panel.title:GetStringWidth() + 20)
 	if mode.key == "dps" then
 		-- Now (green above the average, orange under) and on average.
@@ -536,7 +536,8 @@ local function Draw()
 		if now then
 			color = now >= (perSecond or 0) and "73f280" or "ff9a4d"
 		end
-		panel.note:SetText("|cffffd100NOW|r |cff"..color..(now and SUIC.Short(now) or "...").."|r   |cffffd100AVG|r "..SUIC.Short(perSecond or 0))
+		panel.note:SetText("|cffffd100"..SUIC.T("NOW").."|r |cff"..color..(now and SUIC.Short(now) or "...").."|r   |cffffd100"
+			..SUIC.T("AVG").."|r "..SUIC.Short(perSecond or 0))
 	elseif mode.key == "damage" then
 		-- The total alone: what the lines under it add up to.
 		panel.note:SetText(SUIC.Short(sum or 0))
@@ -612,7 +613,7 @@ end
 local function MenuInit()
 	for index = 1, table.getn(MODES) do
 		local mode = MODES[index]
-		UIDropDownMenu_AddButton({ text = mode.name, func = PickMode, arg1 = mode.key,
+		UIDropDownMenu_AddButton({ text = SUIC.T(mode.name), func = PickMode, arg1 = mode.key,
 			checked = SUIC.DB().meterMode == mode.key })
 	end
 end

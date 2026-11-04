@@ -52,12 +52,12 @@ local pins = {}
 
 local function PinEnter()
 	GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-	GameTooltip:SetText(this.title or "", 1, 0.82, 0)
+	GameTooltip:SetText(SUIC.T(this.title or ""), 1, 0.82, 0)
 	if this.note then
-		GameTooltip:AddLine(this.note, 0.85, 0.85, 0.85)
+		GameTooltip:AddLine(SUIC.T(this.note), 0.85, 0.85, 0.85)
 	end
 	if this.yards then
-		GameTooltip:AddLine(math.floor(this.yards + 0.5).." yards away", 0.6, 0.6, 0.6)
+		GameTooltip:AddLine(SUIC.TF("{1} yards away", math.floor(this.yards + 0.5)), 0.6, 0.6, 0.6)
 	end
 	GameTooltip:Show()
 end
@@ -190,7 +190,7 @@ local function Draw()
 				pin.art:SetAlpha(1)
 				pin.check:Hide()
 				pin.glow:Hide()
-				pin.title, pin.note = "Cache", "Costs "..(Num(run.chest) or "?").." gold"
+				pin.title, pin.note = "Cache", SUIC.TF("Costs {1} gold", Num(run.chest) or "?")
 				Place(pin, py - y, px - x, perYard, radius, CHEST_SIZE)
 				pin:SetAlpha(pin.alpha)
 			end
@@ -233,7 +233,7 @@ local function Draw()
 					pin:SetAlpha(pin.alpha)
 				else
 					local left = Num(lair.left) or -1
-					pin.note = "Slain"..(left > 0 and (", back in "..SUIC.Clock(left)) or "")
+					pin.note = left > 0 and SUIC.TF("Slain, back in {1}", SUIC.Clock(left)) or "Slain"
 					pin.art:SetVertexColor(1, 1, 1)
 					pin.art:SetAlpha(0.35)
 					pin.check:Show()

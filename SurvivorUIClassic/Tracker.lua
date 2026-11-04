@@ -67,7 +67,7 @@ end
 
 local function LairsTip(owner)
 	GameTooltip:SetOwner(owner, "ANCHOR_LEFT")
-	GameTooltip:SetText("Lairs")
+	GameTooltip:SetText(SUIC.T("Lairs"))
 	local lairs = AZS_GetLairs and AZS_GetLairs() or AZS_LAIRS or {}
 	for index = 1, table.getn(lairs) do
 		local lair = lairs[index]
@@ -78,8 +78,8 @@ local function LairsTip(owner)
 		elseif state == "asleep" then
 			r, g, b = 1, 1, 1
 		end
-		local name = (lair.name and lair.name ~= "") and lair.name or ("Lair "..(lair.index or index))
-		GameTooltip:AddDoubleLine(name, state, 1, 0.82, 0, r, g, b)
+		local name = (lair.name and lair.name ~= "") and lair.name or SUIC.TF("Lair {1}", lair.index or index)
+		GameTooltip:AddDoubleLine(name, SUIC.T(state), 1, 0.82, 0, r, g, b)
 	end
 	GameTooltip:Show()
 end
@@ -90,11 +90,11 @@ local function SpotEnter()
 	elseif this.target then
 		GameTooltip:SetOwner(this, "ANCHOR_LEFT")
 		GameTooltip:SetText(this.target)
-		GameTooltip:AddLine("Click to target it.", 1, 1, 1)
+		GameTooltip:AddLine(SUIC.T("Click to target it."), 1, 1, 1)
 		GameTooltip:Show()
 	elseif this.tip then
 		GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-		GameTooltip:SetText(this.tip)
+		GameTooltip:SetText(SUIC.T(this.tip))
 		GameTooltip:Show()
 	end
 end
@@ -220,7 +220,7 @@ local function EndlessBar(run)
 	local bosses = AZS_GetBosses and AZS_GetBosses() or {}
 	if table.getn(bosses) > 0 then
 		timebar:SetValue(1)
-		timebar.middle:SetText("|cffffa040"..(bosses[1].name or "?").." is here|r")
+		timebar.middle:SetText("|cffffa040"..SUIC.TF("{1} is here", bosses[1].name or "?").."|r")
 		wait = 0
 		return
 	end
@@ -237,7 +237,7 @@ local function EndlessBar(run)
 		wait = left
 	end
 	timebar:SetValue(wait > 0 and (1 - left / wait) or 0)
-	timebar.middle:SetText("Next boss  "..SUIC.Clock(left))
+	timebar.middle:SetText(SUIC.TF("Next boss  {1}", SUIC.Clock(left)))
 end
 
 -- A Heroic run's affixes from III on, as the game names them (its 0.124:
@@ -249,7 +249,7 @@ local function Affixes(info, heroic)
 	local names = {}
 	for name in string.gfind(tostring(info.affixes), "[^,]+") do
 		name = string.gsub(name, "^%s*(.-)%s*$", "%1")
-		table.insert(names, string.upper(string.sub(name, 1, 1))..string.sub(name, 2))
+		table.insert(names, SUIC.T(string.upper(string.sub(name, 1, 1))..string.sub(name, 2)))
 	end
 	return "|cffff6050"..table.concat(names, ", ").."|r"
 end
@@ -258,14 +258,14 @@ local function DrawHead(run, info, now, length, endless)
 	frame.title:SetText(info.zname or "")
 	local heroic = Num(info.heroic)
 	if endless then
-		frame.note:SetText("|cffd080ffEndless|r")
+		frame.note:SetText(SUIC.T("|cffd080ffEndless|r"))
 	elseif heroic > 0 then
-		frame.note:SetText("|cffff7a2eHeroic "..(HEROIC[heroic] or heroic).."|r")
+		frame.note:SetText("|cffff7a2e"..SUIC.TF("Heroic {1}", HEROIC[heroic] or heroic).."|r")
 	else
-		frame.note:SetText("|cffaaaaaaNormal|r")
+		frame.note:SetText(SUIC.T("|cffaaaaaaNormal|r"))
 	end
-	local lifeText = Num(run.lives) > 0 and ("  |cffd0d0d0Lives "..Num(run.lives).."|r") or ""
-	level:SetText(run.lvl and ("Level "..run.lvl..lifeText) or "")
+	local lifeText = Num(run.lives) > 0 and ("  |cffd0d0d0"..SUIC.TF("Lives {1}", Num(run.lives)).."|r") or ""
+	level:SetText(run.lvl and (SUIC.TF("Level {1}", run.lvl)..lifeText) or "")
 	lives:SetText(Affixes(info, heroic))
 	clock:SetText(SUIC.Clock(now))
 	if endless then
@@ -300,12 +300,12 @@ local function DrawCounts(run, y)
 	local x = PAD + 2
 	if db.trackerKills then
 		count = count + 1
-		Cell(count, y, x, KILLS, "Kills", Num(run.kills))
+		Cell(count, y, x, KILLS, SUIC.T("Kills"), Num(run.kills))
 		x = x + KILLS + 10
 	end
 	if db.trackerElites then
 		count = count + 1
-		Cell(count, y, x, W - PAD - x, "Elites/Guardians Slain", Num(run.ek).." / "..Num(run.gk))
+		Cell(count, y, x, W - PAD - x, SUIC.T("Elites/Guardians Slain"), Num(run.ek).." / "..Num(run.gk))
 	end
 	for index = count + 1, table.getn(cells) do
 		cells[index]:Hide()
@@ -358,7 +358,7 @@ local function DrawBosses(now, length, endless, y)
 			elseif kind == "up" then
 				Line(used, rowY, "up", name, Health(name), COLORS.up).target = name
 			elseif kind == "next" then
-				Line(used, rowY, "dot", name, "in "..SUIC.Clock(at - now), COLORS.next)
+				Line(used, rowY, "dot", name, SUIC.TF("in {1}", SUIC.Clock(at - now)), COLORS.next)
 			else
 				Line(used, rowY, "ring", name, SUIC.Clock(at), COLORS.due)
 			end
@@ -405,10 +405,10 @@ local function Lairs()
 			held = held + 1
 			awake = true
 			local share = GuardianShare(lair.id)
-			table.insert(words, "|cffff8026"..(share and (math.floor(share * 100 + 0.5).."%") or "Fight").."|r")
+			table.insert(words, "|cffff8026"..(share and (math.floor(share * 100 + 0.5).."%") or SUIC.T("Fight")).."|r")
 		else
 			held = held + 1
-			table.insert(words, "|cff4cf24cUp|r")
+			table.insert(words, "|cff4cf24c"..SUIC.T("Up").."|r")
 		end
 	end
 	return table.getn(lairs), held, awake, words
@@ -422,7 +422,7 @@ local function DrawRest(run, now, endless, used, y)
 	local db = SUIC.DB()
 	if endless then
 		used = used + 1
-		Line(used, y + (used - 1) * ROW, "done", "Bosses slain", Num(run.bk), GREEN)
+		Line(used, y + (used - 1) * ROW, "done", SUIC.T("Bosses slain"), Num(run.bk), GREEN)
 	end
 	local refills = false
 	local all, held, awake, words = Lairs()
@@ -434,7 +434,7 @@ local function DrawRest(run, now, endless, used, y)
 			color, mark = RED, "ring"
 		end
 		used = used + 1
-		local row = Line(used, y + (used - 1) * ROW, mark, "Guardians", held.." / "..all, color)
+		local row = Line(used, y + (used - 1) * ROW, mark, SUIC.T("Guardians"), held.." / "..all, color)
 		row.mark:SetVertexColor(color[1], color[2], color[3])
 		row.lairs = true
 		if table.getn(words) > 0 then
@@ -454,7 +454,7 @@ local function DrawRest(run, now, endless, used, y)
 	y = y + used * ROW + (refills and 11 or 0)
 	if db.trackerGold then
 		At(purse, y + 3)
-		purse.text:SetText("|cffffd100Gold / Cache|r   "..Num(run.gold)
+		purse.text:SetText("|cffffd100"..SUIC.T("Gold / Cache").."|r   "..Num(run.gold)
 			..(run.chest and ("  |cffaaaaaa/ "..Num(run.chest).."|r") or ""))
 		purse.tip = "Your gold, and what the next cache costs."
 		y = y + ROW + 3

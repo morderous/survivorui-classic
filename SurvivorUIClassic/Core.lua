@@ -182,11 +182,91 @@ function SUIC.OnStart(start)
 	end
 end
 
+-- The hero as the run has it (as Survivor UI's v3.0.56 does): the game's
+-- UnitClass and UnitRace on "player" keep the hero it opened with when another
+-- is picked in the menu before the run (seen: opened on a Troll Shaman, run
+-- as a Tauren Warrior, the game said Shaman and Troll all run long), so the
+-- character page's name took the first class's color and its header said
+-- "Troll Warrior". The run's zone (AZS_ZONE: class, cname, race, hero) says
+-- the hero's own, so "player" is answered from it once it is there; any other
+-- unit as the game has it. Only here, with Survivor UI standing aside (it does
+-- the same as it runs): never twice.
+function SUIC.OwnHero()
+	if SurvivorUI_GameUnitClass or SUIC.GameUnitClass then
+		return
+	end
+	local GameUnitClass, GameUnitRace, GameUnitName = UnitClass, UnitRace, UnitName
+	SUIC.GameUnitClass, SUIC.GameUnitRace, SUIC.GameUnitName = GameUnitClass, GameUnitRace, GameUnitName
+
+	-- The run's zone, when it holds field as a word, and unit is the player.
+	local function Told(unit, field)
+		local zone = AZS_ZONE
+		if zone and type(zone[field]) == "string" and zone[field] ~= "" and type(unit) == "string"
+			and string.lower(unit) == "player" then
+			return zone
+		end
+	end
+
+	function UnitClass(unit)
+		local zone = Told(unit, "class")
+		if zone then
+			return zone.cname or (GameUnitClass(unit)), string.upper(zone.class)
+		end
+		return GameUnitClass(unit)
+	end
+
+	-- The race's token as the game's own: no spaces ("NightElf"), the Undead
+	-- "Scourge" (as 1.12's).
+	function UnitRace(unit)
+		local zone = Told(unit, "race")
+		if zone then
+			local token = string.gsub(zone.race, " ", "")
+			return zone.race, token == "Undead" and "Scourge" or token
+		end
+		return GameUnitRace(unit)
+	end
+
+	function UnitName(unit)
+		local zone = Told(unit, "hero")
+		if zone then
+			return zone.hero
+		end
+		return GameUnitName(unit)
+	end
+
+	-- The character page's name (the game's CharacterFrame asks this one).
+	local GameUnitPVPName = UnitPVPName
+	if GameUnitPVPName then
+		function UnitPVPName(unit)
+			local zone = Told(unit, "hero")
+			if zone then
+				return zone.hero
+			end
+			return GameUnitPVPName(unit)
+		end
+	end
+
+	-- The sex too (kept as well: a Gnome man run after a Troll woman, the
+	-- game said 3): the zone's gender 0 a man, 1 a woman; the game's 2 and 3.
+	local GameUnitSex = UnitSex
+	if GameUnitSex then
+		function UnitSex(unit)
+			local zone = AZS_ZONE
+			local gender = zone and tonumber(zone.gender)
+			if (gender == 0 or gender == 1) and type(unit) == "string" and string.lower(unit) == "player" then
+				return gender + 2
+			end
+			return GameUnitSex(unit)
+		end
+	end
+end
+
 function SUIC.Start()
 	if SUIC.active then
 		return
 	end
 	SUIC.active = true
+	SUIC.OwnHero()
 	for index = 1, table.getn(starts) do
 		starts[index]()
 	end
@@ -458,7 +538,7 @@ SlashCmdList["SURVIVORUICLASSIC"] = function(msg)
 	elseif msg == "guide" then
 		SUIC.ToggleGuide()
 	elseif msg == "help" then
-		SUIC.Print("/suic for the options, /suic move to move frames, /suic guide for the guide, /suic reset to put them all back. Version "..SUIC.VERSION..".")
+		SUIC.Print(SUIC.TF("/suic for the options, /suic move to move frames, /suic guide for the guide, /suic reset to put them all back. Version {1}.", SUIC.VERSION))
 	else
 		SUIC.ToggleOptions()
 	end

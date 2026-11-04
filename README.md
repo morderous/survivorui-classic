@@ -90,6 +90,26 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.12, 2026-11-04
+
+The Classic in Russian, Scholomance's Tier 0.5 sets in the Guide, the Dread Lord on the meter, and your hero as you picked it in the menu.
+
+**Your hero**
+- **Class, race and name from the run:** with another class picked in the menu before the run, the game kept telling addons the hero it opened with. The character page's name took the first class's color, its header read the first race ("Troll Warrior" for a Tauren Warrior), the Guide's Sets page opened on the first class, and the loot list's marks went to that class's total. The addon now takes the hero's class, race and name from the run itself.
+
+**Russian** (a first version; feedback from Russian players welcome on Discord)
+- **The Classic speaks Russian:** with the game in Russian, the run tracker, the build list, the jewelry, the damage meter, the stats panel, the character page and its formulas, the loot, the boss bars, the options and the rest, in the game's own words where it has them. Spell names in the build list and the meter come in the game's Russian. The guide stays English for now.
+- **The language from the game:** read from the game itself (its meter API) before the first run, so every race works and Ukrainian isn't taken for Russian.
+- **Guide:** with the game in Russian, a tip that wraps to two lines (the Reduction page's "The last points count most") no longer runs into the next one.
+
+**Guide**
+- **No more "cast":** the Haste and Not DoTs pages say a spell goes off, as it does in this game, and the Haste page's "This spell" line has room for two lines.
+
+**Game 0.140 (Scholomance)**
+- **Giantstalker's in the Guide:** the 8-piece bonus now reads as the game's: Kill Command's cooldown 20% shorter and 30% more damage.
+- **Dread Lord:** the warlock's Pit Lord is a Dread Lord from this version; the damage meter gives it its icon again, the game's own for it (Pact of the Nathrezim's), and its Searing Pain shows as the Dread Lord's Felseeker. The Summons show up to 2 Dread Lords again. The Pit Lord's name still works.
+- **Tier 0.5 in the Guide:** the Sets page has each class's seventh set, from Scholomance: Heroism, Soulforge, Beastmaster, Darkmantle, Virtuous, Five Thunders, Sorcerer's, Deathmist and Feralheart. Each has a 4-piece bonus of its class's own and its 8-piece bonus at 3/5; at 5/5 it takes the numbers the game gives it instead of growing by half. The Marks page's table has its star costs: 5.5, 11, 16.5, 22 and 27.5 marks at no discount. The Guide's window is a little taller to hold the seventh set.
+
 ### 0.2.11, 2026-11-03
 
 A Stats panel of your own, boss bars in the nameplates' look, debuffs inside the plates, bosses and awake guardians that move on the minimap, and your shields on your health bar.

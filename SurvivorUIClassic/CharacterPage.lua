@@ -149,6 +149,21 @@ local function Small(text)
 	end
 end
 
+-- A long label of the game's (Russian's "Лечение за убийство") a point or
+-- two smaller, so its number keeps clear of it.
+local function Narrow(label, value, room)
+	if not (label and value and label:GetText()) then
+		return
+	end
+	local font, _, flags = label:GetFont()
+	local size = TEXT_SIZE
+	label:SetFont(font, size, flags)
+	while size > 7 and label:GetStringWidth() + value:GetStringWidth() + 4 > room do
+		size = size - 1
+		label:SetFont(font, size, flags)
+	end
+end
+
 local function FindArt(frame)
 	local regions = { frame:GetRegions() }
 	for index = 1, table.getn(regions) do
@@ -206,7 +221,7 @@ local function Together(s)
 	local average = 1 + chance * (double - 1)
 	local pace = 1 / tonumber(s.cd)
 	GameTooltip:AddLine(" ")
-	Note(string.format("Together: %.2f x %.2f x %.2f = x%.2f your spells' base damage over time.",
+	Note(string.format(SUIC.T("Together: %.2f x %.2f x %.2f = x%.2f your spells' base damage over time."),
 		tonumber(s.dmg), average, pace, tonumber(s.dmg) * average * pace), LUCK_COLOR[1], LUCK_COLOR[2], LUCK_COLOR[3])
 end
 
@@ -214,47 +229,47 @@ local function DamageTip(s)
 	local level = Level()
 	local byLevel = 0.03 * (level - 1)
 	local gear = tonumber(s.gdmg) or 0
-	Note(string.format("Every hit is the spell's base x %.2f.", tonumber(s.dmg)), 1, 1, 1)
-	Note("Every source is added first, then it multiplies once, so a new +10% counts for less the more you have.")
+	Note(string.format(SUIC.T("Every hit is the spell's base x %.2f."), tonumber(s.dmg)), 1, 1, 1)
+	Note(SUIC.T("Every source is added first, then it multiplies once, so a new +10% counts for less the more you have."))
 	GameTooltip:AddLine(" ")
-	Part("Base", "100%")
-	Part("Level "..level.." (3% a level)", Signed(byLevel))
-	Part("Worn gear", Signed(gear))
-	Part("Talents, jewelry, buffs", Signed(tonumber(s.dmg) - 1 - byLevel - gear))
+	Part(SUIC.T("Base"), "100%")
+	Part(SUIC.TF("Level {1} (3% a level)", level), Signed(byLevel))
+	Part(SUIC.T("Worn gear"), Signed(gear))
+	Part(SUIC.T("Talents, jewelry, buffs"), Signed(tonumber(s.dmg) - 1 - byLevel - gear))
 	Together(s)
 end
 
 local function CritTip(s)
 	local chance, double = tonumber(s.crit), tonumber(s.cm)
 	local gear = tonumber(s.gcrit) or 0
-	Note(string.format("A hit strikes critically this often, for %.0f%% of its damage.", double * 100), 1, 1, 1)
-	Note(string.format("Average hit: 1 + %.1f%% x (%.0f%% - 100%%) = x%.2f.", chance * 100, double * 100, 1 + chance * (double - 1)))
-	Note("Past 100%, the rest adds to Crit Dmg.")
+	Note(string.format(SUIC.T("A hit strikes critically this often, for %.0f%% of its damage."), double * 100), 1, 1, 1)
+	Note(string.format(SUIC.T("Average hit: 1 + %.1f%% x (%.0f%% - 100%%) = x%.2f."), chance * 100, double * 100, 1 + chance * (double - 1)))
+	Note(SUIC.T("Past 100%, the rest adds to Crit Dmg."))
 	GameTooltip:AddLine(" ")
-	Part("Base", "5%")
-	Part("Worn gear", Signed(gear))
-	Part("Talents, jewelry, buffs", Signed(chance - 0.05 - gear))
+	Part(SUIC.T("Base"), "5%")
+	Part(SUIC.T("Worn gear"), Signed(gear))
+	Part(SUIC.T("Talents, jewelry, buffs"), Signed(chance - 0.05 - gear))
 	Together(s)
 end
 
 local function CritDmgTip(s)
 	local chance, double = tonumber(s.crit), tonumber(s.cm)
 	local gear = tonumber(s.gcm) or 0
-	Note(string.format("A critical hit deals %.0f%% of its damage.", double * 100), 1, 1, 1)
-	Note(string.format("Average hit: 1 + %.1f%% x (%.0f%% - 100%%) = x%.2f.", chance * 100, double * 100, 1 + chance * (double - 1)))
-	Note("Crit past 100% adds here.")
+	Note(string.format(SUIC.T("A critical hit deals %.0f%% of its damage."), double * 100), 1, 1, 1)
+	Note(string.format(SUIC.T("Average hit: 1 + %.1f%% x (%.0f%% - 100%%) = x%.2f."), chance * 100, double * 100, 1 + chance * (double - 1)))
+	Note(SUIC.T("Crit past 100% adds here."))
 	GameTooltip:AddLine(" ")
-	Part("Base", "200%")
-	Part("Worn gear", Signed(gear))
-	Part("Talents, jewelry, buffs", Signed(double - 2 - gear))
+	Part(SUIC.T("Base"), "200%")
+	Part(SUIC.T("Worn gear"), Signed(gear))
+	Part(SUIC.T("Talents, jewelry, buffs"), Signed(double - 2 - gear))
 	Together(s)
 end
 
 -- Under the game's own words on its Haste row, which stays in Offense.
 local function HasteWords(s)
 	local wait = tonumber(s.cd)
-	return string.format("\n\nCooldown = base / (1 + bonuses), the bonuses added: %s here, shown as %s. Spells come %.2f times as often. "
-		.."No spell comes back faster than 0.25 sec.", Signed(1 / wait - 1), Signed(1 - wait), 1 / wait)
+	return "\n\n"..string.format(SUIC.T("Cooldown = base / (1 + bonuses), the bonuses added: %s here, shown as %s. Spells come %.2f times as often. No spell comes back faster than 0.25 sec."),
+		Signed(1 / wait - 1), Signed(1 - wait), 1 / wait)
 end
 
 local MAIN = {
@@ -276,7 +291,7 @@ local function StatEnter()
 		return
 	end
 	BesideWindow(this)
-	GameTooltip:SetText(this.stat[1].." "..this.stat[2](s), GOLD[1], GOLD[2], GOLD[3])
+	GameTooltip:SetText(SUIC.T(this.stat[1]).." "..this.stat[2](s), GOLD[1], GOLD[2], GOLD[3])
 	this.stat[3](s)
 	GameTooltip:Show()
 end
@@ -290,23 +305,23 @@ local function LuckEnter()
 	local m = 1 + luck + LevelBonus(level)
 	local odds, weights = Odds(m)
 	BesideWindow(this)
-	GameTooltip:SetText("Luck "..Signed(luck), LUCK_COLOR[1], LUCK_COLOR[2], LUCK_COLOR[3])
-	Note("Every roll: m = 1 + luck + 1% a level (30% at most).", 1, 1, 1)
-	Note(string.format("Level %d: m = 1 + %.2f + %.2f = %.2f", level, luck, LevelBonus(level), m))
+	GameTooltip:SetText(SUIC.T("Luck").." "..Signed(luck), LUCK_COLOR[1], LUCK_COLOR[2], LUCK_COLOR[3])
+	Note(SUIC.T("Every roll: m = 1 + luck + 1% a level (30% at most)."), 1, 1, 1)
+	Note(string.format(SUIC.T("Level %d: m = 1 + %.2f + %.2f = %.2f"), level, luck, LevelBonus(level), m))
 	GameTooltip:AddLine(" ")
-	Note("Each rarity's weight, and its share of them all:")
+	Note(SUIC.T("Each rarity's weight, and its share of them all:"))
 	for index = 5, 1, -1 do
 		local row = WEIGHTS[index]
-		GameTooltip:AddDoubleLine(row[1].."  "..row[2].." = "..string.format("%.1f", weights[index]), Percent(odds[index]),
+		GameTooltip:AddDoubleLine(SUIC.T(row[1]).."  "..row[2].." = "..string.format("%.1f", weights[index]), Percent(odds[index]),
 			row[3][1], row[3][2], row[3][3], 1, 1, 1)
 	end
 	GameTooltip:AddLine(" ")
-	Note("Cards: a level-up's spell cards, and rings and trinkets.", 1, 1, 1)
-	Note("Neck: amulets, which roll with m + 0.5.", 1, 1, 1)
-	Note("From a guardian's hoard or a boss, rings, trinkets and amulets add 0.25 to m; from a cache you buy, nothing.")
-	Note("Each card rolls on its own, and luck has no cap.")
+	Note(SUIC.T("Cards: a level-up's spell cards, and rings and trinkets."), 1, 1, 1)
+	Note(SUIC.T("Neck: amulets, which roll with m + 0.5."), 1, 1, 1)
+	Note(SUIC.T("From a guardian's hoard or a boss, rings, trinkets and amulets add 0.25 to m; from a cache you buy, nothing."))
+	Note(SUIC.T("Each card rolls on its own, and luck has no cap."))
 	local none = 1 - odds[5]
-	Note("A legendary among a level-up's 3 cards: "..Percent(1 - none * none * none), 1, 0.5, 0)
+	Note(SUIC.TF("A legendary among a level-up's 3 cards: {1}", Percent(1 - none * none * none)), 1, 0.5, 0)
 	GameTooltip:Show()
 end
 
@@ -332,7 +347,8 @@ end
 
 local function KeyOf(row)
 	local _, _, key = string.find(row.label and row.label:GetText() or "", "^(.-):")
-	return key
+	-- The game's label in its language, read back in English.
+	return key and SUIC.EnglishOf(key, panel.names)
 end
 
 -- Every row in its small panel, by the name the game gave it. The Run Stats
@@ -354,6 +370,7 @@ local function SeatRows()
 		row:SetWidth(groupWidth - 2 * INSET)
 		Small(row.label)
 		Small(row.value)
+		Narrow(row.label, row.value, groupWidth - 2 * INSET)
 	end
 	for key in pairs(ABOVE) do
 		if found[key] then
@@ -403,12 +420,20 @@ local function SeatRows()
 	local armor = CharacterArmorFrame
 	local armorValue = CharacterArmorFrameStatText and CharacterArmorFrameStatText:GetText()
 	if armor and armorValue then
-		CharacterArmorFrameLabel:SetText("Dmg Reduction:")
-		armor.azsTitle = "Dmg Reduction "..armorValue
+		CharacterArmorFrameLabel:SetText(SUIC.T("Dmg Reduction:"))
+		armor.azsTitle = SUIC.T("Dmg Reduction").." "..armorValue
+	end
+	-- Speed apart from Haste where the game names both alike (Russian).
+	local speed = CharacterRangedAttackFrameLabel
+	if speed and SUIC.Spoken() and speed:GetText() ~= SUIC.T("Speed")..":" then
+		speed.suicGame = speed:GetText()
+		speed:SetText(SUIC.T("Speed")..":")
 	end
 	local haste = CharacterStatFrame3
-	if haste and haste.azsText and AZS_STATS and not string.find(haste.azsText, "Cooldown = base", 1, true) then
+	-- Once on each of the game's texts: it writes its own again with each update.
+	if haste and haste.azsText and AZS_STATS and haste.azsText ~= haste.suicWith then
 		haste.azsText = haste.azsText..HasteWords(AZS_STATS)
+		haste.suicWith = haste.azsText
 	end
 	DrawSides()
 end
@@ -502,7 +527,11 @@ local function PutBack()
 		end
 	end
 	if CharacterArmorFrameLabel then
-		CharacterArmorFrameLabel:SetText("Armor:")
+		CharacterArmorFrameLabel:SetText(SUIC.T("Armor:"))
+	end
+	if CharacterRangedAttackFrameLabel and CharacterRangedAttackFrameLabel.suicGame then
+		CharacterRangedAttackFrameLabel:SetText(CharacterRangedAttackFrameLabel.suicGame)
+		CharacterRangedAttackFrameLabel.suicGame = nil
 	end
 	local rows = AZS_MORE_ROWS or {}
 	for index = 1, table.getn(rows) do
@@ -550,7 +579,7 @@ local function BuildMain()
 		row.stat = stat
 		row.name = SUIC.Text(row, "GameFontNormal", TOP_TEXT)
 		row.name:SetPoint("LEFT", row, "LEFT", 0, 0)
-		row.name:SetText(stat[1])
+		row.name:SetText(SUIC.T(stat[1]))
 		row.name:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 		row.value = SUIC.Text(row, "GameFontNormal", TOP_TEXT)
 		row.value:SetPoint("RIGHT", row, "RIGHT", 0, 0)
@@ -575,7 +604,7 @@ local function BuildLuck()
 	for index = 1, table.getn(heads) do
 		local head = SUIC.Text(frame, "GameFontNormal", TOP_TEXT)
 		head:SetPoint("TOP", frame, "TOPLEFT", heads[index][2], top)
-		head:SetText(heads[index][1])
+		head:SetText(SUIC.T(heads[index][1]))
 		head:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 	end
 	frame.rows = {}
@@ -629,15 +658,17 @@ local function Build()
 	panel.rule:ClearAllPoints()
 	panel.rule:SetPoint("TOPLEFT", panel, "TOPLEFT", 64, -52)
 	panel.rule:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -8, -52)
-	panel.known = {}
+	panel.known, panel.names = {}, {}
 	for key in pairs(ABOVE) do
 		panel.known[key] = true
+		table.insert(panel.names, key)
 	end
 	for index = 1, table.getn(GROUPS) do
 		local group = GROUPS[index]
 		group.frame = SmallPanel(group.title, index - 1, GROUPS_TOP, panel:GetFrameLevel() + 1, PANEL_HEIGHT)
 		for each = 1, table.getn(group.rows) do
 			panel.known[group.rows[each]] = true
+			table.insert(panel.names, group.rows[each])
 		end
 	end
 	BuildMain()

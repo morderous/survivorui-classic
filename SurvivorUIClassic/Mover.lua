@@ -357,15 +357,16 @@ local function MakeBox(piece)
 	box:SetBackdropBorderColor(0.3, 1, 0.3, 1)
 	local label = box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	label:SetPoint("CENTER", box, "CENTER", 0, 0)
-	label:SetText(piece.label)
+	label:SetText(SUIC.T(piece.label))
+	box.label = label
 	box.piece = piece
 	box:SetScript("OnDragStart", DragStart)
 	box:SetScript("OnDragStop", DragStop)
 	box:SetScript("OnClick", BoxClick)
 	box:SetScript("OnEnter", function()
 		GameTooltip:SetOwner(this, "ANCHOR_TOP")
-		GameTooltip:SetText(this.piece.label)
-		GameTooltip:AddLine("Drag to move. Right-click to put it back.", 1, 1, 1)
+		GameTooltip:SetText(SUIC.T(this.piece.label))
+		GameTooltip:AddLine(SUIC.T("Drag to move. Right-click to put it back."), 1, 1, 1)
 		GameTooltip:Show()
 	end)
 	box:SetScript("OnLeave", function()
@@ -503,13 +504,13 @@ bar:EnableMouse(true)
 bar:Hide()
 local barText = bar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 barText:SetPoint("TOP", bar, "TOP", 0, -16)
-barText:SetText("Drag a green box: it snaps to the grid and the others. Right-click puts it back.")
+barText:SetText(SUIC.T("Drag a green box: it snaps to the grid and the others. Right-click puts it back."))
 
 local resetAll = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
 resetAll:SetWidth(110)
 resetAll:SetHeight(22)
 resetAll:SetPoint("BOTTOM", bar, "BOTTOM", -60, 12)
-resetAll:SetText("Reset all")
+resetAll:SetText(SUIC.T("Reset all"))
 resetAll:SetScript("OnClick", function()
 	SUIC.ResetPositions()
 end)
@@ -517,7 +518,7 @@ local done = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
 done:SetWidth(110)
 done:SetHeight(22)
 done:SetPoint("BOTTOM", bar, "BOTTOM", 60, 12)
-done:SetText("Done")
+done:SetText(SUIC.T("Done"))
 done:SetScript("OnClick", function()
 	SUIC.SetMoveMode(false)
 end)
@@ -542,6 +543,7 @@ function SUIC.SetMoveMode(on)
 		local box = pieces[index].box
 		if moving then
 			Seat(box)
+			box.label:SetText(SUIC.T(pieces[index].label))
 			box:Show()
 		else
 			box:Hide()
@@ -550,6 +552,9 @@ function SUIC.SetMoveMode(on)
 	if moving then
 		BuildGrid()
 		grid:Show()
+		-- As wide as its words in the game's language (English's as it was).
+		barText:SetText(SUIC.T("Drag a green box: it snaps to the grid and the others. Right-click puts it back."))
+		bar:SetWidth(SUIC.Spoken() and math.max(380, math.ceil(barText:GetStringWidth() or 0) + 40) or 380)
 		bar:Show()
 	else
 		grid:Hide()
@@ -570,7 +575,7 @@ function SUIC.ResetPositions()
 			Seat(piece.box)
 		end
 	end
-	SUIC.Print("every frame is back in its first place.")
+	SUIC.Print(SUIC.T("every frame is back in its first place."))
 end
 
 -- Every place and every size back to the first.
@@ -578,7 +583,7 @@ function SUIC.ResetEverything()
 	for index = 1, table.getn(pieces) do
 		SUIC.ResetPiece(pieces[index].key)
 	end
-	SUIC.Print("every frame is back in its first place, at its first size.")
+	SUIC.Print(SUIC.T("every frame is back in its first place, at its first size."))
 end
 
 ------------------------------------------------------------------------------

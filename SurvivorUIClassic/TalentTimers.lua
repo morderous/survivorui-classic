@@ -45,11 +45,11 @@ local function SlotEnter()
 		return
 	end
 	GameTooltip:SetOwner(this, "ANCHOR_TOP")
-	GameTooltip:SetText(this.name)
+	GameTooltip:SetText(SUIC.Native(this.name))
 	if this.left and this.left > 0 then
-		GameTooltip:AddLine((this.summon and "Next in " or "Ready in ")..SUIC.Clock(this.left), 1, 1, 1)
+		GameTooltip:AddLine(SUIC.TF(this.summon and "Next in {1}" or "Ready in {1}", SUIC.Clock(this.left)), 1, 1, 1)
 	else
-		GameTooltip:AddLine("Ready", 0.3, 1, 0.3)
+		GameTooltip:AddLine(SUIC.T("Ready"), 0.3, 1, 0.3)
 	end
 	GameTooltip:Show()
 end

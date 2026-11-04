@@ -260,7 +260,7 @@ local PET_CASTS = {
 	["Firebolt"] = { "firebolt", "Imp's Firebolt" },
 	["Inferno"] = { "inferno", "Infernal's Inferno" },
 	["Hellfire"] = { "hellfire", "Infernal's Hellfire" },
-	["Searing Pain"] = { "searing_pain", "Pit Lord's Felseeker" },
+	["Searing Pain"] = { "searing_pain", "Dread Lord's Felseeker" },
 	["Shadow Bolt"] = { "shadow_bolt", "Doomguard's Shadow Bolt" },
 }
 
