@@ -265,6 +265,9 @@ PAGES[2] = { "Action bar", "The game's action bar, its experience bar on top.", 
 	Size(page, "Size", "bar")
 	Setting(page, "Cooldown text on the action bar", "cooldownText", "RefreshCooldowns",
 		"The seconds left on each button, the button darkened under them. OmniCC, when installed, does it instead.")
+	-- FloorHourglass.lua (Lucas, 2026-11-05).
+	Setting(page, "Hourglass at its fastest", "floorHourglass", "RefreshFloorHourglass",
+		"A small gold hourglass at the foot of a spell's button once its cooldown is at the game's floor, 0.25 sec (Hellfire's 0.5, Divine Shield's 4): more haste or cooldown cards do nothing for it then. Hover it to see. Not on Soulfire, Polymorph, Hunter's Mark, Seal Fate, Bloodrage and Lightwell, which the game times its own way.")
 	Reset(page, { "bar" })
 end }
 

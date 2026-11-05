@@ -68,6 +68,7 @@ local DEFAULTS = {
 	clockFrame = true,         -- a border round the game's clock under it (Clock.lua)
 	fps = true,                -- the frames a second, in the screen's corner (Fps.lua)
 	cooldownText = true,       -- the numbers on the action buttons (Cooldowns.lua)
+	floorHourglass = true,     -- an hourglass on a spell's button at the game's floor (FloorHourglass.lua)
 	lootLog = true,            -- the loot notices (Loot.lua)
 	lootList = true,           -- the loot list and the run's marks (LootList.lua)
 	summons = true,            -- the summons and totems (Summons.lua)

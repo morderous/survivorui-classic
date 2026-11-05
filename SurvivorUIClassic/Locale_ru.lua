@@ -272,6 +272,10 @@ SUIC.WORDS.ru = {
 	["The game's action bar, its experience bar on top."] = "Панель команд игры с полосой опыта над ней.",
 	["Cooldown text on the action bar"] = "Время восстановления на панели команд",
 	["The seconds left on each button, the button darkened under them. OmniCC, when installed, does it instead."] = "Оставшиеся секунды на каждой кнопке, сама кнопка затемнена. Если установлен OmniCC, это делает он.",
+	["Hourglass at its fastest"] = "Песочные часы: быстрее не бывает",
+	["A small gold hourglass at the foot of a spell's button once its cooldown is at the game's floor, 0.25 sec (Hellfire's 0.5, Divine Shield's 4): more haste or cooldown cards do nothing for it then. Hover it to see. Not on Soulfire, Polymorph, Hunter's Mark, Seal Fate, Bloodrage and Lightwell, which the game times its own way."] = "Маленькие золотые песочные часы у нижнего края кнопки заклинания, когда его восстановление дошло до нижнего предела игры, 0.25 с (у Адского пламени 0.5, у Божественного щита 4): больше скорости или карты восстановления ему тогда не помогут. Наведите на них, чтобы увидеть. Не у Ожога души, Превращения, Метки охотника, Печати судьбы, Кровавой ярости и Колодца Света: игра считает их по-своему.",
+	-- The hourglass of a spell at its fastest (FloorHourglass.lua).
+	["At its fastest: {1}, the game's floor. More haste or cooldown cards do nothing for this spell."] = "Быстрее не бывает: {1}, нижний предел игры. Ни скорость, ни карты восстановления этому заклинанию уже не помогут.",
 	["Unit frames"] = "Рамки",
 	["Your frame, your target's and the party's, and the health on them in numbers."] = "Ваша рамка, рамка цели и группы, и здоровье на них в числах.",
 	["Health text"] = "Текст здоровья",

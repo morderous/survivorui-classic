@@ -90,6 +90,18 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.13, 2026-11-05
+
+A spell at its fastest: its true cooldown in green in the build list, and an hourglass on its button.
+
+**Build list**
+- **0.25 at the floor:** the game never lets a cooldown go under 0.25 sec, but it sends each one to one decimal, so a spell at that floor showed 0.2s. It now shows 0.25. Under a second the list writes two decimals with no zero at the end (0.25, 0.8s), from 1 to 10 sec one (3.1s), from 10 none (12s): the game tells no more than one decimal, so the second is only ever the floor's.
+- **Green at its fastest:** a cooldown at the game's floor is green, with a small hourglass where its "s" was, as on the spell's button. Hover it to see why it goes no lower; any other cooldown shows the spell's tooltip, as the rest of the row.
+
+**Action bar**
+- **An hourglass at its fastest:** a small gold hourglass at the foot of a spell's button once its cooldown is at the game's floor: 0.25 sec, Hellfire's 0.5, Divine Shield's 4. More haste or cooldown cards do nothing for that spell then; hover the hourglass to see. It hangs from the button's bottom edge, mostly over the button, above its cooldown numbers. On or off in the options' Action bar tab (Hourglass at its fastest).
+- **Where the game does not tell:** Soulfire, Polymorph, Hunter's Mark, Seal Fate, Bloodrage and Lightwell work their cooldown out their own way, which can go under 0.25 sec, so they get no hourglass and keep the cooldown as the game sends it. Hellfire's 0.5 is its floor or up to 0.05 sec over it (the game sends 0.5 to 0.55 alike). Divine Shield's floor is 4.4 sec at a run's start and 4 with any bonus to the shield's length, which the game does not tell for sure, so its hourglass shows only at 4 sec, the lowest it can be.
+
 ### 0.2.12, 2026-11-04
 
 The Classic in Russian, Scholomance's Tier 0.5 sets in the Guide, the Dread Lord on the meter, and your hero as you picked it in the menu.

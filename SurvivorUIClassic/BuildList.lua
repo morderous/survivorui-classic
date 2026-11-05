@@ -6,8 +6,10 @@
 -- game writes it, its biggest crit this run (Crits.lua), its cooldown and its
 -- rank, the highest rank first; the racial apart at the bottom (it takes no
 -- slot). The empty slots show, since how many are left matters at every card.
+-- A cooldown at the game's floor in green, a small hourglass in place of its
+-- "s", as on the spell's button (FloorHourglass.lua; Lucas, 2026-11-05).
 -- Hover a spell for its tooltip, its biggest crit for its crits and hits this
--- run.
+-- run, a green cooldown for why it goes no lower.
 --
 -- From the game's addon API (AZS_SPELLS, your racial last): its spells sit on
 -- the action bar in the list's order, the racial on button 12. In a run only.
@@ -23,6 +25,11 @@ local RANK_COLUMN = 20
 local CD_COLUMN = 34
 local CRIT_COLUMN = 36
 local NAME_ROOM = W - 2 * PAD - (ROW + 3) - RANK_COLUMN - CD_COLUMN - CRIT_COLUMN - 4
+local CD_X = -RANK_COLUMN - CD_COLUMN / 2 + 1      -- the cooldown's middle, from the row's right
+local CD_MID = -RANK_COLUMN - CD_COLUMN / 2 + 3    -- the middle between its dividers (DIVIDERS, below)
+local GLASS = 10                                   -- the floor's hourglass: "0.25" and it fill the column
+local GLASS_ART = "Interface\\AddOns\\SurvivorUIClassic\\Art\\FloorHourglass"
+local GREEN = { 0.35, 0.95, 0.45 }                 -- as on the character page
 
 local panel = SUIC.Window("SUICBuildList", "Build")
 panel:SetHeight(TOP + (SLOTS + 1) * ROW + 5 + 6)
@@ -47,6 +54,7 @@ local function SpellName(slot)
 	scan:Hide()
 	return name
 end
+SUIC.SpellName = SpellName         -- for the hourglass's tooltip (FloorHourglass.lua)
 
 local function Pct(value)
 	return math.floor(value * 100 + 0.5).."%"
@@ -79,13 +87,8 @@ local function Line(label, value)
 	GameTooltip:AddDoubleLine("   "..SUIC.T(label), value, 0.75, 0.75, 0.75, 1, 1, 1)
 end
 
-local function CritCard(zone)
-	local row = zone.row
-	local one = row.key and SUIC.SpellRecord(row.key)
-	if not one then
-		SpellTip(row)
-		return
-	end
+-- The tooltip beside the panel, on the screen's roomier side.
+local function Beside(zone)
 	GameTooltip:SetOwner(zone, "ANCHOR_NONE")
 	GameTooltip:ClearAllPoints()
 	if panel:GetCenter() < UIParent:GetCenter() then
@@ -93,6 +96,16 @@ local function CritCard(zone)
 	else
 		GameTooltip:SetPoint("TOPRIGHT", panel, "TOPLEFT", -6, 0)
 	end
+end
+
+local function CritCard(zone)
+	local row = zone.row
+	local one = row.key and SUIC.SpellRecord(row.key)
+	if not one then
+		SpellTip(row)
+		return
+	end
+	Beside(zone)
 	GameTooltip:SetText(row.spell or "?")
 	Head("Critical strikes", one.crits)
 	if one.crits > 0 then
@@ -119,6 +132,21 @@ end
 local function CritLeave()
 	critHover = nil
 	GameTooltip:Hide()
+end
+
+-- A cooldown at the floor: why it is green, as the hourglass on its button
+-- tells it. Any other, the spell's own tooltip.
+local function FloorEnter()
+	local row = this.row
+	if not row.floor then
+		SpellTip(row)
+		return
+	end
+	Beside(this)
+	GameTooltip:SetText(row.spell or "?")
+	GameTooltip:AddLine(SUIC.TF("At its fastest: {1}, the game's floor. More haste or cooldown cards do nothing for this spell.",
+		SUIC.CooldownWords(row.floor)), 1, 1, 1, 1)
+	GameTooltip:Show()
 end
 
 local rows = {}
@@ -149,7 +177,22 @@ for index = 1, SLOTS + 1 do
 	row.rank = SUIC.Text(row, "GameFontNormalSmall")
 	row.rank:SetPoint("CENTER", row, "RIGHT", -RANK_COLUMN / 2 + 1, 0)
 	row.cd = SUIC.Text(row, "GameFontDisableSmall")
-	row.cd:SetPoint("CENTER", row, "RIGHT", -RANK_COLUMN - CD_COLUMN / 2 + 1, 0)
+	row.cd:SetPoint("CENTER", row, "RIGHT", CD_X, 0)
+	row.cdColor = { row.cd:GetTextColor() }
+	row.glass = row:CreateTexture(nil, "OVERLAY")
+	row.glass:SetTexture(GLASS_ART)
+	row.glass:SetWidth(GLASS)
+	row.glass:SetHeight(GLASS)
+	row.glass:SetPoint("LEFT", row.cd, "RIGHT", 0, 0)
+	row.glass:Hide()
+	local slow = CreateFrame("Frame", nil, row)
+	slow:SetWidth(CD_COLUMN)
+	slow:SetHeight(ROW)
+	slow:SetPoint("RIGHT", row, "RIGHT", -RANK_COLUMN + 1, 0)
+	slow:EnableMouse(true)
+	slow:SetScript("OnEnter", FloorEnter)
+	slow:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	slow.row = row
 	row.crit = SUIC.Text(row, "GameFontHighlightSmall")
 	row.crit:SetPoint("CENTER", row, "RIGHT", -RANK_COLUMN - CD_COLUMN - CRIT_COLUMN / 2 + 1, 0)
 	row.crit:SetTextColor(1, 0.55, 0.25)
@@ -184,14 +227,50 @@ rule:SetHeight(1)
 rule:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -TOP - SLOTS * ROW - 2)
 rule:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PAD, -TOP - SLOTS * ROW - 2)
 
-local function Cooldown(entry)
-	local seconds = tonumber(entry.cdmax) or 0
-	if seconds <= 0 then
-		return ""
-	elseif seconds < 10 then
-		return SUIC.TF("{1}s", string.format("%.1f", seconds))
+-- A cooldown's number: under a second to two decimals with no zero at the
+-- end ("0.25", "0.5"), under ten to one ("3.1"), else whole ("12").
+local function CooldownNumber(seconds)
+	if seconds >= 10 then
+		return string.format("%d", math.floor(seconds + 0.5))
+	elseif seconds >= 1 then
+		return string.format("%.1f", seconds)
 	end
-	return SUIC.TF("{1}s", math.floor(seconds + 0.5))
+	local text = string.gsub(string.format("%.2f", seconds), "0+$", "")
+	text = string.gsub(text, "%.$", "")
+	return text
+end
+
+-- And its words: "0.25s", "3.1s", "12s".
+function SUIC.CooldownWords(seconds)
+	return SUIC.TF("{1}s", CooldownNumber(seconds))
+end
+
+-- A spell's cooldown; at the game's floor, the floor (it sends 0.25 as 0.2:
+-- FloorHourglass.lua, SUIC.TrueCooldown), in green, the hourglass for its
+-- "s", the two in the column's middle.
+local function Plain(row, text)
+	row.floor = nil
+	row.cd:ClearAllPoints()
+	row.cd:SetPoint("CENTER", row, "RIGHT", CD_X, 0)
+	row.cd:SetTextColor(unpack(row.cdColor))
+	row.cd:SetText(text)
+	row.glass:Hide()
+end
+
+local function ShowCooldown(row, entry)
+	local seconds, floor = SUIC.TrueCooldown(entry.key, entry.cdmax)
+	if seconds <= 0 then
+		Plain(row, "")
+	elseif not floor then
+		Plain(row, SUIC.CooldownWords(seconds))
+	else
+		row.floor = floor
+		row.cd:ClearAllPoints()
+		row.cd:SetPoint("CENTER", row, "RIGHT", CD_MID - GLASS / 2, 0)
+		row.cd:SetTextColor(GREEN[1], GREEN[2], GREEN[3])
+		row.cd:SetText(CooldownNumber(seconds))
+		row.glass:Show()
+	end
 end
 
 -- A name that fits its room: whole, else its words after the first cut to
@@ -230,7 +309,7 @@ local function Fill(row, entry, slot, racial)
 		row.name:SetTextColor(1, 1, 1)
 	end
 	row.rank:SetText(entry.rank and SUIC.TF("R{1}", entry.rank) or "")
-	row.cd:SetText(Cooldown(entry))
+	ShowCooldown(row, entry)
 	row.key = entry.key
 	row:Show()
 end
@@ -240,7 +319,7 @@ local function Empty(row)
 	row.icon:SetTexture(EMPTY)
 	row.name:SetText(SUIC.T("|cff8a8a8aEmpty|r"))
 	row.rank:SetText("")
-	row.cd:SetText("")
+	Plain(row, "")
 	row.crit:SetText("")
 	row.key = nil
 	row:Show()
