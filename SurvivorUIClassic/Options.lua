@@ -223,6 +223,13 @@ end
 
 local HEALTH = { { "off", "Off" }, { "value", "Value" }, { "percent", "Percent" }, { "both", "Both" } }
 
+-- The health on the boss bars or the plates (Lucas, 2026-11-09).
+local function BarHealth(page, label, key)
+	Radio(page, label, HEALTH, function() return SUIC.DB()[key] or "percent" end, function(value)
+		SUIC.DB()[key] = value
+	end)
+end
+
 local function Health(page, label, key)
 	Radio(page, label, HEALTH, function() return SUIC.DB()[key] end, function(value)
 		SUIC.DB()[key] = value
@@ -346,6 +353,7 @@ PAGES[6] = { "Boss bars", "The game's boss bars as they look, that move and targ
 	Size(page, "Size", "bosses")
 	Setting(page, "Lair guardians, awake or hurt", "bossGuardians")
 	Setting(page, "Elites", "bossElites")
+	BarHealth(page, "Health on the bars", "bossText")
 	Slider(page, "Guardians and elites at most (bosses always)", 0, 8, 1, function() return tonumber(SUIC.DB().bossMost) or 4 end, function(value)
 		SUIC.DB().bossMost = value
 	end, function(value) return tostring(value) end)
@@ -408,6 +416,7 @@ PAGES[14] = { "Nameplates", "Plates over the enemies and the friends: red for th
 	end
 	Both("Normal monsters", "platesNormal", "Elite monsters", "platesElite")
 	Both("Guardians", "platesGuardian", "Bosses", "platesBoss")
+	BarHealth(page, "Health on the plates", "plateText")
 	Setting(page, "Debuffs inside the plates", "plateDebuffs", nil,
 		"Small icons of the debuffs on a guardian or a boss, left to right inside its bar. An elite's show while it is your target or under the mouse.")
 	Setting(page, "Your target, whatever its kind", "platesTargetAny", nil,

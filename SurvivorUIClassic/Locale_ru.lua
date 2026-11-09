@@ -249,6 +249,8 @@ SUIC.WORDS.ru = {
 	["Value"] = "Число",
 	["Percent"] = "Процент",
 	["Both"] = "Оба",
+	["Health on the bars"] = "Здоровье на полосах",
+	["Health on the plates"] = "Здоровье на индикаторах",
 	["Change UI"] = "Сменить UI",
 	["Pick SurvivorUI Classic or Survivor UI. The other one runs from the next time the game starts."] = "Выберите SurvivorUI Classic или Survivor UI. Другой заработает при следующем запуске игры.",
 	-- Options: General.

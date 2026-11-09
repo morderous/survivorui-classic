@@ -2,8 +2,8 @@
 -- SurvivorUI Classic: the boss bars at the top of the screen in the middle,
 -- of the plates' make (Lucas, 2026-11-03): the name over a rounded bar in its
 -- kind's color, as the plates have it (the final boss orange, a boss purple,
--- a guardian blue, an elite green), edged in white, the health's share at its
--- right and the debuffs on the enemy inside it from the left. They move (Move
+-- a guardian blue, an elite green), edged in white, the health at its right
+-- (Off, Value, Percent or Both) and the debuffs on the enemy inside it from the left. They move (Move
 -- frames), and a click targets the enemy (the one targeted is edged in gold;
 -- hover for its health in numbers). The bar under the mouse glows as a plate
 -- does and lines its enemy's plate in white, to tell which one it is; a bar
@@ -24,7 +24,6 @@ local STEP = NAME + HEIGHT + 7  -- one boss and the room under it
 local MOST = 12
 local DEBUFF_SIZE = HEIGHT - 3
 local DEBUFF_MOST = 10
-local SHARE_ROOM = 34           -- the health's share, at the bar's right end
 local ART = "Interface\\AddOns\\SurvivorUIClassic\\Art\\"
 local ORDER = { final = 1, boss = 2, guardian = 3, elite = 4 }
 local KIND_NAMES = { final = "Final boss", boss = "Boss", guardian = "Lair guardian", elite = "Elite" }
@@ -233,7 +232,10 @@ end
 
 local function FillDebuffs(entry, unit, target)
 	local list = Debuffs(unit, target)
-	local room = math.min(DEBUFF_MOST, math.floor((WIDTH - SHARE_ROOM - 4) / (DEBUFF_SIZE + 2)))
+	-- Clear of the health's words at the bar's right end, as long as they are.
+	local words = entry.share:GetText()
+	local right = (words and words ~= "") and entry.share:GetStringWidth() + 12 or 4
+	local room = math.min(DEBUFF_MOST, math.floor((WIDTH - right - 4) / (DEBUFF_SIZE + 2)))
 	local count = math.min(room, table.getn(list))
 	for index = 1, count do
 		local debuff = list[index]
@@ -256,11 +258,7 @@ local function Fill(entry, unit, target, mouse)
 		entry.across = across
 		SUIC.RoundLay(entry.fill, entry.bar, 0, WIDTH, HEIGHT, across)
 	end
-	local percent = math.floor(share * 100 + 0.5)
-	if percent == 0 and share > 0 then
-		percent = 1
-	end
-	entry.share:SetText(percent.."%")
+	entry.share:SetText(SUIC.HealthWords(SUIC.DB().bossText or "percent", share, unit.hp, unit.hpm))
 	if unit.kind ~= entry.kind then
 		entry.kind = unit.kind
 		local fill = FILL_COLORS[unit.kind] or FILL_COLORS.elite

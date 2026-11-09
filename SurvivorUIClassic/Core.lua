@@ -47,7 +47,7 @@ local DEFAULTS = {
 	bossGuardians = true,
 	bossElites = true,
 	bossMost = 4,               -- guardians and elites at most; the bosses always
-	bossText = "percent",
+	bossText = "percent",        -- the boss bars' health: off, value, percent or both
 	buildList = true,
 	jewelry = true,
 	meter = true,
@@ -82,6 +82,7 @@ local DEFAULTS = {
 	platesBoss = true,         -- the final boss's too
 	platesTargetAny = false,   -- your target's plate though its kind is off
 	plateDebuffs = true,       -- your debuffs inside the elites', guardians' and bosses' plates
+	plateText = "percent",     -- the plates' health: off, value, percent or both
 	combatText = true,         -- the game's combat text at all (CombatText.lua)
 	ctColumns = false,         -- Survivor UI's numbers in its place (CombatColumns.lua)
 	ctIcons = true,            -- each with its source's icon
@@ -357,6 +358,33 @@ function SUIC.Short(value)
 		return string.format("%.1fk", value / 1000)
 	end
 	return tostring(math.floor(value + 0.5))
+end
+
+-- A health as a bar's option reads it (Lucas, 2026-11-09): "off" nothing,
+-- "percent" 36%, "value" 1.23M / 3.40M, "both" 1.23M / 3.40M (36%); compact,
+-- as a plate has room for, "value" 1.23M and "both" 1.23M | 36%. With the
+-- numbers unknown (hpm nil) the value reads as the share.
+function SUIC.HealthWords(style, share, hp, hpm, compact)
+	if style == "off" then
+		return ""
+	end
+	local percent = math.floor(share * 100 + 0.5)
+	if percent == 0 and share > 0 then
+		percent = 1
+	end
+	percent = percent.."%"
+	hpm = tonumber(hpm)
+	if style == "percent" or not hpm or hpm <= 0 then
+		return percent
+	end
+	hp = tonumber(hp) or 0
+	if style == "value" then
+		return compact and SUIC.Short(hp) or SUIC.Short(hp).." / "..SUIC.Short(hpm)
+	end
+	if compact then
+		return SUIC.Short(hp).." | "..percent
+	end
+	return SUIC.Short(hp).." / "..SUIC.Short(hpm).." ("..percent..")"
 end
 
 -- Seconds as a clock reads them: 4:07, 1:02:30.

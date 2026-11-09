@@ -170,6 +170,7 @@ local QUERY = { kinds = { "elite", "guardian", "boss", "finalBoss" }, states = {
 local scanned, looks = 0, {}
 local visible, shownCount = {}, 0
 local important, importantAt = {}, nil
+local unitsById = {}            -- the game's units by their ids (AZS_UNITS)
 local anchors, named = {}, {}    -- the anchors alive; their kinds by name
 local party, partyWait = {}, 1   -- the party's classes by name, read once a second
 local lit, litId                 -- the enemy to line: its name, its unit's id
@@ -218,15 +219,24 @@ end
 local function Important()
 	if AZS_UNITS_UPDATED ~= importantAt then
 		importantAt = AZS_UNITS_UPDATED
-		important = {}
+		important, unitsById = {}, {}
 		local units = AZS_UNITS or {}
 		for index = 1, table.getn(units) do
+			if units[index].id then
+				unitsById[tostring(units[index].id)] = units[index]
+			end
 			if units[index].name then
 				Mark(important, units[index].name, KIND_OF[units[index].kind] or "elite")
 			end
 		end
 	end
 	return important
+end
+
+-- The game's unit by its id (AZS_UNITS), for its health in numbers.
+local function UnitById(id)
+	Important()
+	return unitsById[tostring(id)]
 end
 
 local function KindByName(name)
@@ -436,7 +446,7 @@ local function Dress(look, kind)
 	else
 		look.skull:Hide()
 	end
-	look.across, look.percent, look.class, look.painted = nil, nil, nil, nil
+	look.across, look.words, look.class, look.painted = nil, nil, nil, nil
 	if look.marked then
 		PlaceRaid(look)
 	end
@@ -451,7 +461,6 @@ end
 
 local DEBUFF_KINDS = { elite = true, guardian = true, boss = true, final = true }
 local DEBUFF_EVERY = 0.2
-local DEBUFF_ROOM = 24          -- the health's share, at the bar's right end
 local DEBUFF_MOST = 8
 
 
@@ -522,7 +531,9 @@ local function UpdateDebuffs(look, db, isTarget, now)
 	look.debuffsAt = now
 	local style = look.style
 	local size = style.height - 1
-	local room = math.min(DEBUFF_MOST, math.floor((style.width - DEBUFF_ROOM - 2) / (size + 1)))
+	-- Clear of the health's words at the bar's right end, as long as they are.
+	local right = (style.share and look.words and look.words ~= "") and look.share:GetStringWidth() + 5 or 2
+	local room = math.min(DEBUFF_MOST, math.floor((style.width - right - 2) / (size + 1)))
 	local list = DebuffList(look, isTarget)
 	local count = math.min(room, table.getn(list))
 	for index = 1, count do
@@ -680,13 +691,19 @@ local function Update(look, db, hasTarget, now)
 		Lay(look.fill, look.bar, 0, style.width, style.height, across)
 	end
 	if style.share then
-		local percent = math.floor(share * 100 + 0.5)
-		if percent == 0 and share > 0 then
-			percent = 1
+		-- The numbers: the game's unit's when the plate is tied to one, else
+		-- the client's bar when it holds them (its most is not 100).
+		local hp, hpm
+		local unit = look.unit and look.claimName == name and UnitById(look.unit)
+		if unit and tonumber(unit.hpm) then
+			hp, hpm = unit.hp, unit.hpm
+		elseif low and high and high - low ~= 100 and high > 1 then
+			hp, hpm = stock.bar:GetValue(), high
 		end
-		if percent ~= look.percent then
-			look.percent = percent
-			look.share:SetText(percent.."%")
+		local words = SUIC.HealthWords(db.plateText or "percent", share, hp, hpm, true)
+		if words ~= look.words then
+			look.words = words
+			look.share:SetText(words)
 		end
 	end
 

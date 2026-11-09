@@ -24,7 +24,7 @@ What it gives:
   - the guardians holding their lairs, in red when all are slain, green while some hold, orange while one fights, and the second each empty lair fills again (hover for every lair);
   - your gold against the next cache's price, in the middle.
   - What is done turns green.
-- **Boss bars.** The game's own as they look, the name in red over a long thin red bar, with two things more: they move, and a click targets the enemy (the one you target is framed in gold; hover for its health). The bar under the mouse goes white and lines its enemy's plate in white, and a bar goes white with the mouse on its enemy in the world. The lair guardians and elites too, as you choose.
+- **Boss bars.** The game's own as they look, the name in red over a long thin red bar, with two things more: they move, and a click targets the enemy (the one you target is framed in gold; hover for its health), the health on the right as a number, a percent, both or nothing. The bar under the mouse goes white and lines its enemy's plate in white, and a bar goes white with the mouse on its enemy in the world. The lair guardians and elites too, as you choose.
 - **Cooldown numbers** on the action buttons, down to the tenth of a second, the button darkened while it cools down.
 - **Summons and totems** as the game's buffs, over the action bar's right end and growing toward its middle: how many are out ("6/30" against a limit) and the time the first goes.
 - **Talent cooldowns** over the action bar's left end, growing toward its middle: a second life's wait (Divine Intervention, Cheat Death), a heal's, a proc's, a summoning talent's next; dark and counting while they wait, glowing gold when ready.
@@ -89,6 +89,18 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.16, 2026-11-09
+
+The boss bars and the nameplates can now show the health as a number, a percent, both or nothing.
+
+#### New
+
+**Boss bars**
+- **Health on the bars:** Off, Value (1.23M / 3.40M), Percent (36%) or Both (1.23M / 3.40M (36%)), on the Boss bars page of the options. The debuffs inside the bar make room for it.
+
+**Nameplates**
+- **Health on the plates:** Off, Value (12.3k), Percent or Both (12.3k | 36%), on the Nameplates page. Guardians, bosses and elites show the game's own numbers; where the game does not give a monster's numbers, its plate shows the percent.
 
 ### 0.2.15, 2026-11-09
 
