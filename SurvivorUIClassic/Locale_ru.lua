@@ -451,6 +451,7 @@ SUIC.WORDS.ru = {
 	["Fortified"] = "Укреплённый",
 	["|cffd080ffEndless|r"] = "|cffd080ffБесконечно|r",
 	["Heroic {1}"] = "Героический {1}",
+	["Hyper"] = "Гипер",
 	["|cffaaaaaaNormal|r"] = "|cffaaaaaaОбычный|r",
 	["Lives {1}"] = "Жизни {1}",
 	["Elites/Guardians Slain"] = "Убито элитных/стражей",

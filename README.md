@@ -90,6 +90,18 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.18, 2026-11-09
+
+Ready for the game's Hyper Mode.
+
+#### New
+
+**Run tracker**
+- **Hyper Mode (the game's 0.143):** a Hyper run says "Hyper" in blue after its difficulty. The boss list and the run's length already come from the game, so they show Hyper's minutes as they are.
+
+**Guide**
+- **Marks page:** Hyper Mode pays the same marks as without it.
+
 ### 0.2.17, 2026-11-09
 
 The Guide's Jewels page shows the average pick past the first.

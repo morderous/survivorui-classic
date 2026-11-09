@@ -257,12 +257,23 @@ end
 local function DrawHead(run, info, now, length, endless)
 	frame.title:SetText(info.zname or "")
 	local heroic = Num(info.heroic)
-	if endless then
-		frame.note:SetText(SUIC.T("|cffd080ffEndless|r"))
-	elseif heroic > 0 then
-		frame.note:SetText("|cffff7a2e"..SUIC.TF("Heroic {1}", HEROIC[heroic] or heroic).."|r")
+	-- Hyper Mode (the game's 0.143), in blue after the difficulty: the game
+	-- sends addons no word of it, only the run's length, already halved (8, 9
+	-- or 10 minutes against 16, 18 or 20), so 12 minutes or less. A field of
+	-- its own (hyper), should the game ever send one, comes first.
+	local hyper
+	if info.hyper ~= nil then
+		hyper = Num(info.hyper) == 1
 	else
-		frame.note:SetText(SUIC.T("|cffaaaaaaNormal|r"))
+		hyper = length > 0 and length <= 720
+	end
+	hyper = hyper and ("  |cff5cd6ff"..SUIC.T("Hyper").."|r") or ""
+	if endless then
+		frame.note:SetText(SUIC.T("|cffd080ffEndless|r")..hyper)
+	elseif heroic > 0 then
+		frame.note:SetText("|cffff7a2e"..SUIC.TF("Heroic {1}", HEROIC[heroic] or heroic).."|r"..hyper)
+	else
+		frame.note:SetText(SUIC.T("|cffaaaaaaNormal|r")..hyper)
 	end
 	local lifeText = Num(run.lives) > 0 and ("  |cffd0d0d0"..SUIC.TF("Lives {1}", Num(run.lives)).."|r") or ""
 	level:SetText(run.lvl and (SUIC.TF("Level {1}", run.lvl)..lifeText) or "")

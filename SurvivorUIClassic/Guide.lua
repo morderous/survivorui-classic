@@ -1948,7 +1948,7 @@ local function BuildMarks(page)
 	Para(page, "Marks are what bosses pay you, and what your gear's stars cost.", 1)
 	local width = math.floor((PAGE_WIDTH - 2 * CARD_GAP) / 3)
 	local steps = {
-		{ "1. Earn", "Bosses pay marks when they fall. A piece you already own pays marks instead. Heroic pays more." },
+		{ "1. Earn", "Bosses pay marks when they fall. A piece you already own pays marks instead. Heroic pays more; Hyper Mode the same." },
 		{ "2. Keep", "Marks stay with the class that earned them. Each class saves its own." },
 		{ "3. Spend", "In the Armory, each piece goes up one star at a time, up to 5." },
 	}
