@@ -14,7 +14,7 @@ What it gives:
   - While the boxes are up, a grid shows, its middle lines in gold. A box let go snaps to the grid, to the screen's edges and middle, and to the other boxes' edges and middles.
   - A place is kept from the point of the screen nearest the piece, so the layout keeps its shape at any interface size and any resolution: a piece in the middle stays in the middle, one by an edge stays by that edge.
   - The options give each piece its own size, and it grows from where it stands. The whole interface is at 80%, its size a slider in General.
-- **The Guide.** A gold ! on the minimap's rim opens pages that explain the game's numbers simply, with colors, sliders to try and your own hero's numbers: Luck, Damage, Crit, Haste and Echo, DoTs, the spells that look like DoTs and aren't, Damage Reduction, Speed, Pickup and Area, what your gear's stars cost in marks, and every class's sets. Everything in it was read from the game's executable, and more pages are coming.
+- **The Guide.** A gold ! on the minimap's rim opens pages that explain the game's numbers simply, with colors, sliders to try and your own hero's numbers: Luck, Damage, Crit, Haste and Echo, DoTs, the spells that look like DoTs and aren't, Damage Reduction, Speed, Pickup and Area, what your gear's stars cost in marks, every class's sets, and every ring, trinket and amulet. Everything in it was read from the game's executable, and more pages are coming.
 - **Health and mana in numbers.** The target frame shows an enemy's real health, `12.3k / 40.0k (31%)`, read from the game, and the mana in the same words. Each frame can show Off, Value, Percent or Both.
 - **Run tracker,** after a Mythic+ timer, in a panel as the others:
   - the zone, with its Heroic level or Endless;
@@ -89,6 +89,15 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic reset`: every frame back in its first place.
 
 ## Changes
+
+### 0.2.14, 2026-11-08
+
+The Guide's new Jewels page: every ring, trinket and amulet, and why nothing in them is rolled.
+
+#### New
+
+**Guide**
+- **Jewels page:** every ring, trinket and amulet, read from the game itself. Nothing in a jewel is rolled: its rarity sets its numbers. Pick Rings or Trinkets and a rarity to see the total after 1 to 5 picks of the same jewel, and its most: the last pick before the game stops offering it, or "no cap". Hover a row for every pick. Amulets show what each gives and how its numbers grow with each rank, toward 3 times the first. Names and lines in the game's own language.
 
 ### 0.2.13, 2026-11-05
 
