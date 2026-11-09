@@ -90,6 +90,15 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.17, 2026-11-09
+
+The Guide's Jewels page shows the average pick past the first.
+
+#### New
+
+**Guide**
+- **Jewels page, picks in groups:** Rings and Trinkets show the first pick, then what one pick adds on average for picks 2 to 4, 5 to 8 and 9 to 14, then the most. A jewel the game stops offering says how many times it comes instead, and one with a soft cap says where it slows down. Hover a row for every pick, one by one.
+
 ### 0.2.16, 2026-11-09
 
 The boss bars and the nameplates can now show the health as a number, a percent, both or nothing.
