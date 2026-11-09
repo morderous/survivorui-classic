@@ -90,6 +90,15 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.15, 2026-11-09
+
+The Guide's Jewels page now shows what each pick adds, and an amulet at its cap.
+
+#### New
+
+**Guide**
+- **Jewels page, what each pick adds:** Rings and Trinkets now show, pick by pick, what that pick adds over the one before (+22.5%, +10.5%, +8.4%...), the most still the total at the last pick, in yellow. Hover a row for each pick with the game's own line. Amulets show Rank 1, Rank 5 and Rank 10, then the amulet's icon: hover it for the amulet at its cap, 3 times its first numbers. A short note under them says how an amulet grows: it never changes rarity, and taking the one you wear again ranks it up, a bit less each time, toward 3 times.
+
 ### 0.2.14, 2026-11-08
 
 The Guide's new Jewels page: every ring, trinket and amulet, and why nothing in them is rolled.
