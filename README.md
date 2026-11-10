@@ -90,6 +90,14 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.21, 2026-11-10
+
+A hotfix for combat text in the biggest swarms.
+
+#### Hotfixes
+
+- **Combat text** stays light in the biggest swarms: past 200 hits in one frame, the rest add up in one number with no icon, and only a crit that could be a new best is looked at, so the addon's share of a frame no longer grows with the swarm.
+
 ### 0.2.20, 2026-11-10
 
 A hotfix for combat text when thousands of hits land at once.

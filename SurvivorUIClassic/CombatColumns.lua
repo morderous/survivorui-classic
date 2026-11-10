@@ -375,6 +375,37 @@ local function Parse(line)
 	end
 end
 
+-- A hit past the frame's share of lines (SUIC.Overflow, Crits.lua), read the
+-- cheap way: its amount and whether a crit or a tick, added to one number of
+-- its kind with no source and no icon.
+-- The number it adds to is the one Spawn makes for no source, by its key made
+-- once here (a key put together for each of thousands of hits would cost).
+local function Rest(line)
+	-- A plain find, then the number read where it starts: a pattern tried at
+	-- every place of the line costs more.
+	local at, amount = string.find(line, " for ", 1, true), nil
+	if at then
+		_, _, amount = string.find(line, "^(%d+)", at + 5)
+	end
+	local crit, periodic, key = false, false, "dealt"
+	if amount then
+		crit = string.find(line, " crit", 1, true) ~= nil
+		if crit then
+			key = SUIC.DB().ctCritColumn and "crit!" or "dealt!"
+		end
+	else
+		_, _, amount = string.find(line, " suffers (%d+) ")
+		if not (amount and string.find(line, " from your ", 1, true)) then
+			return
+		end
+		periodic, key = true, "dealt~"
+	end
+	amount = tonumber(amount)
+	if not AddUp(key, key == "crit!" and "crit" or "dealt", amount) then
+		Spawn("dealt", amount, crit, periodic)
+	end
+end
+
 local TAKEN_TYPES = { DAMAGE = true, DAMAGE_CRIT = true, SPELL_DAMAGE = true }
 local HEAL_TYPES = { HEAL = true, HEAL_CRIT = true, PERIODIC_HEAL = true }
 SUIC.NUMBER_TYPES = { DAMAGE = true, DAMAGE_CRIT = true, SPELL_DAMAGE = true, HEAL = true, HEAL_CRIT = true, PERIODIC_HEAL = true }
@@ -397,6 +428,10 @@ listener:SetScript("OnEvent", function()
 				Spawn("heal", math.floor(amount + 0.5), arg1 == "HEAL_CRIT", arg1 == "PERIODIC_HEAL")
 			end
 		end
+		return
+	end
+	if SUIC.Overflow and SUIC.Overflow("numbers") then
+		Rest(arg1 or "")
 		return
 	end
 	local amount, crit, periodic, source = Parse(arg1 or "")

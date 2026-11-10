@@ -39,6 +39,43 @@ local function Read(message, ways)
 	return ability, tonumber(amount)
 end
 
+-- A swarm sends tens of thousands of hits a second (Buncha's, 2026-11-10: the
+-- game at 0.1 fps in endless, the numbers still on). Past so many lines in one
+-- frame, each handler takes the rest of that frame's lines the cheap way
+-- (CombatColumns.lua: one number with no source; here: only a crit that could
+-- be a spell's best), so a frame's work stops growing with the swarm.
+SUIC.LINES_A_FRAME = 200
+local lineCount = {}
+
+-- True for a line past the frame's share of the handler named.
+function SUIC.Overflow(key)
+	local now = GetTime()
+	local one = lineCount[key]
+	if not one then
+		one = { at = now, n = 0 }
+		lineCount[key] = one
+	elseif one.at ~= now then
+		one.at, one.n = now, 0
+	end
+	one.n = one.n + 1
+	return one.n > SUIC.LINES_A_FRAME
+end
+
+-- The smallest of the spells' biggest crits this run: a crit under it beats
+-- none of them.
+local critFloor, critFloorFresh
+local function CritFloor()
+	if not critFloorFresh then
+		critFloor, critFloorFresh = nil, true
+		for _, one in pairs(seen) do
+			if one.best and (not critFloor or one.best < critFloor) then
+				critFloor = one.best
+			end
+		end
+	end
+	return critFloor or 0
+end
+
 local function Record(ability, amount, crit)
 	local key = SUIC.KeyOf(ability)
 	local one = seen[key]
@@ -54,6 +91,7 @@ local function Record(ability, amount, crit)
 		if not one.best or amount > one.best then
 			one.best = amount
 			one.bestAt = AZS_GetRunTime and AZS_GetRunTime() or 0
+			critFloorFresh = nil
 		end
 	else
 		one.hits = one.hits + 1
@@ -221,6 +259,7 @@ function SUIC.SpellRecord(key)
 	if AZS_ZONE_UPDATED ~= runSeen then
 		runSeen = AZS_ZONE_UPDATED
 		seen = {}
+		critFloorFresh = nil
 	end
 	return seen[key]
 end
@@ -231,10 +270,28 @@ function SUIC.BiggestCrit(key)
 	return one and one.best
 end
 
+-- Past the frame's share of lines, a line is read only when it is a crit that
+-- could be a spell's best: the plain finds first.
+local function Worth(message)
+	if not string.find(message, " crit", 1, true) then
+		return false
+	end
+	local at = string.find(message, " for ", 1, true)
+	if not at then
+		return false
+	end
+	local _, _, amount = string.find(message, "^(%d+)", at + 5)
+	amount = tonumber(amount)
+	return amount ~= nil and amount > CritFloor()
+end
+
 local events = CreateFrame("Frame")
 events:SetScript("OnEvent", function()
 	if arg1 then
 		SUIC.SpellRecord("")
+		if SUIC.Overflow("crits") and not Worth(arg1) then
+			return
+		end
 		Note(arg1)
 	end
 end)
