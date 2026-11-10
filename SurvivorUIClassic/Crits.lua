@@ -64,60 +64,145 @@ end
 
 -- The game's own feed of the hero's hits, each saying its meter line (its
 -- 0.139), kept a second for the combat log's line to find it.
-local hits = {}
-local cursor
+--
+-- A swarm's hits come by the thousand in one frame, each with its line
+-- (Buncha's, 2026-11-10: the game stopped responding). Each line looking
+-- through every hit of the last second made a frame's work grow as the square
+-- of its hits, so the hits are kept twice: in a ring, oldest first, to let
+-- them go after their second; and by amount and crit, in short lists, where a
+-- line finds its hit among the few of its own amount, looking at so many at
+-- most. The feed is read once a frame (and again for a line whose hit is not
+-- there yet), and the hits' tables are given out again.
+local feed = {
+	ring = {}, first = 1, last = 0,     -- the hits, oldest first
+	byAmount = {},                      -- [amount, -1 - amount for a crit] = { head, tail, hits }
+	spare = {}, spareLists = {},        -- tables to give out again
+	asked = {},                         -- the last line's answer, for the same line asked again
+	KEEP = 1,                           -- seconds a hit waits for its line
+	MOST = 4096,                        -- hits kept at most
+	LOOK = 32,                          -- hits a line looks at, at most
+	READS = 16,                         -- reads of 256 hits a frame, at most
+}
 
-local function ReadHits()
-	local result = AZS_GetCombatTextEvents(cursor, 256)
-	if not result then
-		cursor = nil
-		return
-	end
-	cursor = result.cursor
-	local now = GetTime()
-	local events = result.events or {}
-	for index = 1, table.getn(events) do
-		local hit = events[index]
-		if hit.kind == "damage" and hit.meterSource then
-			table.insert(hits, { at = now, amount = hit.amount, crit = hit.critical, ability = hit.abilityName,
-				meter = hit.meterSource, key = hit.meterSourceKey })
+local function Key(amount, crit)
+	return crit and -1 - amount or amount
+end
+
+-- The oldest hit let go, from its list too: it is the oldest there.
+function feed.DropOldest()
+	local hit = feed.ring[feed.first]
+	feed.ring[feed.first] = nil
+	feed.first = feed.first + 1
+	local list = feed.byAmount[hit.amountKey]
+	if list then
+		list[list.head] = nil
+		list.head = list.head + 1
+		if list.head > list.tail then
+			feed.byAmount[hit.amountKey] = nil
+			table.insert(feed.spareLists, list)
 		end
 	end
-	while hits[1] and now - hits[1].at > 1 do
-		table.remove(hits, 1)
+	table.insert(feed.spare, hit)
+end
+
+function feed.Read()
+	local now = GetTime()
+	feed.readAt = now
+	for _ = 1, feed.READS do
+		local result = AZS_GetCombatTextEvents(feed.cursor, 256)
+		if not result then
+			feed.cursor = nil
+			break
+		end
+		feed.cursor = result.cursor
+		local events = result.events or {}
+		local count = table.getn(events)
+		for index = 1, count do
+			local one = events[index]
+			local amount = tonumber(one.amount)
+			if one.kind == "damage" and one.meterSource and amount then
+				local hit = table.remove(feed.spare) or {}
+				hit.at, hit.amount, hit.crit, hit.ability = now, amount, one.critical, one.abilityName
+				hit.meter, hit.key = one.meterSource, one.meterSourceKey
+				hit.amountKey = Key(amount, hit.crit)
+				feed.last = feed.last + 1
+				feed.ring[feed.last] = hit
+				local list = feed.byAmount[hit.amountKey]
+				if not list then
+					list = table.remove(feed.spareLists) or {}
+					list.head, list.tail = 1, 0
+					feed.byAmount[hit.amountKey] = list
+				end
+				list.tail = list.tail + 1
+				list[list.tail] = hit
+			end
+		end
+		if count < 256 then
+			break
+		end
+	end
+	while feed.first <= feed.last and (now - feed.ring[feed.first].at > feed.KEEP
+		or feed.last - feed.first >= feed.MOST) do
+		feed.DropOldest()
 	end
 end
 
--- The meter's line for a line of the combat log, when it is not the spell the
--- line names: a Flametongue Weapon's Fire Nova, a demon's own spell. Nil for the
--- spell itself and for a hit not found: by its amount and crit, the same spell's
--- first.
-function SUIC.HitLine(name, line)
-	if not AZS_GetCombatTextEvents then
+-- The last hit of its amount and crit, that spell's when there is one.
+function feed.Last(amount, crit, name)
+	local list = feed.byAmount[Key(amount, crit)]
+	if not list then
 		return nil
 	end
+	local found
+	local stop = math.max(list.head, list.tail - feed.LOOK + 1)
+	for index = list.tail, stop, -1 do
+		local hit = list[index]
+		if hit.ability == name then
+			return hit
+		end
+		found = found or hit
+	end
+	return found
+end
+
+function feed.Line(name, line)
 	local _, _, amount = string.find(line, " for (%d+)")
 	amount = tonumber(amount)
 	if not amount then
 		return nil
 	end
-	ReadHits()
+	-- Read once a frame (GetTime holds for the frame).
+	if feed.readAt ~= GetTime() then
+		feed.Read()
+	end
 	local crit = string.find(line, " crit", 1, true) ~= nil
-	local found
-	for index = table.getn(hits), 1, -1 do
-		local hit = hits[index]
-		if hit.amount == amount and (not hit.crit) == (not crit) then
-			found = found or hit
-			if hit.ability == name then
-				found = hit
-				break
-			end
-		end
+	local found = feed.Last(amount, crit, name)
+	if not found then
+		feed.Read()
+		found = feed.Last(amount, crit, name)
 	end
 	if not found or found.meter == found.ability or found.meter == SUIC.MeterName(found.key) then
 		return nil
 	end
 	return found.meter
+end
+
+-- The meter's line for a line of the combat log, when it is not the spell the
+-- line names: a Flametongue Weapon's Fire Nova, a demon's own spell. Nil for the
+-- spell itself and for a hit not found: by its amount and crit, the same spell's
+-- first. The same line asked again in the same frame (the combat numbers and
+-- this file each ask) has the same answer, kept.
+function SUIC.HitLine(name, line)
+	if not AZS_GetCombatTextEvents then
+		return nil
+	end
+	local asked, now = feed.asked, GetTime()
+	if asked.line == line and asked.name == name and asked.at == now then
+		return asked.answer
+	end
+	local answer = feed.Line(name, line)
+	asked.line, asked.name, asked.at, asked.answer = line, name, now, answer
+	return answer
 end
 
 local function Note(message)

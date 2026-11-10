@@ -50,6 +50,11 @@ local function On()
 end
 
 local function FreeText()
+	-- All of them showing: none to give, without looking (a swarm's hits come
+	-- by the thousand).
+	if live >= MOST then
+		return nil
+	end
 	for index = 1, table.getn(texts) do
 		if not texts[index].live then
 			return texts[index]
@@ -137,6 +142,8 @@ local function Label(kind, sum, count)
 end
 
 -- In the number just shown from the same source, its sum and how many (x3).
+-- Its text is set once a frame (the update below), not once a hit: a swarm
+-- adds up thousands of hits a second (Buncha's, 2026-11-10).
 local function AddUp(key, kind, amount)
 	local text = lastOf[key]
 	if not (SUIC.DB().ctAdd and ADD_UP[kind] and text and text.live and text.addKey == key and text.age < ADD_WINDOW) then
@@ -144,7 +151,7 @@ local function AddUp(key, kind, amount)
 	end
 	text.sum = text.sum + amount
 	text.count = text.count + 1
-	text:SetText(Label(kind, text.sum, text.count))
+	text.relabel = kind
 	return true
 end
 
@@ -167,7 +174,7 @@ local function Spawn(kind, amount, crit, periodic, source)
 	if not text then
 		return
 	end
-	text.sum, text.count, text.addKey = amount, 1, key
+	text.sum, text.count, text.addKey, text.relabel = amount, 1, key, nil
 	lastOf[key] = text
 	local column = COLUMNS[kind]
 	local startX, startY = StartOf(kind)
@@ -220,6 +227,10 @@ layer:SetScript("OnUpdate", function()
 		if text.live then
 			text.age = text.age + arg1
 			local t = text.age / text.life
+			if text.relabel then
+				text:SetText(Label(text.relabel, text.sum, text.count))
+				text.relabel = nil
+			end
 			if text.crit and not text.popped and text.age >= POP_TIME then
 				text.popped = true
 				Face(text, CRIT_SIZE, "THICKOUTLINE")
@@ -269,7 +280,7 @@ local PET_CASTS = {
 -- meter has it so; a warlock's demons have a line each.
 local BEASTS = { ["Wolf"] = true, ["Raptor"] = true }
 
-local function InPets(name)
+local function PetsLine(name)
 	local _, class = UnitClass("player")
 	if class == "HUNTER" and BEASTS[name] then
 		return true
@@ -288,6 +299,18 @@ local function InPets(name)
 		summoned = summoned or groups[index].name == name
 	end
 	return summoned
+end
+
+-- Asked once per name every few seconds: a swarm's hits come by the thousand.
+local inPets = { at = 0, answers = {} }
+local function InPets(name)
+	if GetTime() - inPets.at > 5 then
+		inPets.at, inPets.answers = GetTime(), {}
+	end
+	if inPets.answers[name] == nil then
+		inPets.answers[name] = PetsLine(name) and true or false
+	end
+	return inPets.answers[name]
 end
 
 local function Holds(key)

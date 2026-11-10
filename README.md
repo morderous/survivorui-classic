@@ -90,6 +90,14 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.20, 2026-11-10
+
+A hotfix for combat text when thousands of hits land at once.
+
+#### Hotfixes
+
+- **Combat text** no longer freezes the game when thousands of hits land at once: each hit now costs the same small amount, however many come together.
+
 ### 0.2.19, 2026-11-09
 
 The Guide's Luck page made over as a ladder of bars, and a hoard comes only from a guardian.
