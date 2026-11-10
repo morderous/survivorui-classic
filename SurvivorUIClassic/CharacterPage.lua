@@ -24,7 +24,8 @@
 --   Luck: m = 1 + luck + the level's 1% (30% at most); the weights Common 60,
 --     Uncommon 25m, Rare 10m^2, Epic 4m^3, Legendary m^4, each card rolled on
 --     its own. Rings and trinkets as the cards ("Cards" here), amulets ("Neck")
---     with m + 0.5, and a guardian's hoard or a boss 0.25 more on both.
+--     with m + 0.5, and a guardian's hoard 0.25 more on both (a boss gives
+--     no hoard: 0.143, only guardians and bought caches open one).
 
 local LEFT, TOP = 11, -11       -- where the game's art starts in its frame
 local WIDTH, HEIGHT = 620, 484
@@ -318,7 +319,7 @@ local function LuckEnter()
 	GameTooltip:AddLine(" ")
 	Note(SUIC.T("Cards: a level-up's spell cards, and rings and trinkets."), 1, 1, 1)
 	Note(SUIC.T("Neck: amulets, which roll with m + 0.5."), 1, 1, 1)
-	Note(SUIC.T("From a guardian's hoard or a boss, rings, trinkets and amulets add 0.25 to m; from a cache you buy, nothing."))
+	Note(SUIC.T("From a guardian's hoard, rings, trinkets and amulets add 0.25 to m; from a cache you buy, nothing."))
 	Note(SUIC.T("Each card rolls on its own, and luck has no cap."))
 	local none = 1 - odds[5]
 	Note(SUIC.TF("A legendary among a level-up's 3 cards: {1}", Percent(1 - none * none * none)), 1, 0.5, 0)

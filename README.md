@@ -90,6 +90,19 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.19, 2026-11-09
+
+The Guide's Luck page made over as a ladder of bars, and a hoard comes only from a guardian.
+
+#### New
+
+**Guide**
+- **Luck page, a ladder of bars:** "Luck: better cards" is now a ladder of bars, 100 cards for each step of Luck (+0% to +300%, at level 30 and up), with your own row in gold. Move it with the slider, or with My hero for the Luck you have now. Past a line, a column gives your chances of at least 1 Legendary in a level-up's 3 choices. The "?" by the title tells how Luck works, in words. The page is new, so its tab shows as unread again.
+
+#### Hotfixes
+
+- **Hoards:** the Guide and the Luck tooltip of the character page no longer say bosses give a hoard: only guardians do.
+
 ### 0.2.18, 2026-11-09
 
 Ready for the game's Hyper Mode.
