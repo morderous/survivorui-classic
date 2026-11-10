@@ -566,8 +566,12 @@ SlashCmdList["SURVIVORUICLASSIC"] = function(msg)
 		SUIC.ResetPositions()
 	elseif msg == "guide" then
 		SUIC.ToggleGuide()
+	elseif string.find(msg, "^perf") and SUIC_TogglePerf then
+		-- The performance monitor (Perf.lua): "perf", "perf off", "perf reset", "perf report".
+		local _, _, rest = string.find(msg, "^perf%s*(.-)%s*$")
+		SUIC_TogglePerf(rest or "")
 	elseif msg == "help" then
-		SUIC.Print(SUIC.TF("/suic for the options, /suic move to move frames, /suic guide for the guide, /suic reset to put them all back. Version {1}.", SUIC.VERSION))
+		SUIC.Print(SUIC.TF("/suic for the options, /suic move to move frames, /suic guide for the guide, /suic reset to put them all back, /suic perf for the performance monitor. Version {1}.", SUIC.VERSION))
 	else
 		SUIC.ToggleOptions()
 	end

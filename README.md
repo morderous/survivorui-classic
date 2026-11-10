@@ -87,8 +87,17 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic`: the options, or the choice panel while Survivor UI is in use.
 - `/suic move`: Move frames.
 - `/suic reset`: every frame back in its first place.
+- `/suic perf`: the performance monitor: the frame rate, the slow frames and how much of each frame goes to addons, then the time, calls and memory garbage of every addon's scripts. Report saves it all; `/suic perf off` stops it.
 
 ## Changes
+
+### 0.2.22, 2026-11-10
+
+The performance monitor comes to SurvivorUI Classic: /suic perf.
+
+#### New
+
+- **/suic perf:** the performance monitor, as Survivor UI's, in a window of the game's own make: the frame rate, the slow frames and how much of each frame goes to addons, then the time, calls and memory garbage of every addon's scripts, by addon, by event and in the frames that ran slow. Report saves it all; `/suic perf off` stops it.
 
 ### 0.2.21, 2026-11-10
 

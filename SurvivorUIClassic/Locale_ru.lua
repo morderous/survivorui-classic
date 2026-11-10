@@ -153,7 +153,7 @@ SUIC.WORDS.ru = {
 	["Your time"] = "Ваше время",
 	["Click for your computer's time, or untick it and slide to the time zone you want, and for 24 or 12 hours."] = "Щёлкните, чтобы выбрать время компьютера или, сняв галочку, нужный часовой пояс, а также 24 или 12 часов.",
 	-- Slash command.
-	["/suic for the options, /suic move to move frames, /suic guide for the guide, /suic reset to put them all back. Version {1}."] = "/suic: настройки, /suic move: двигать окна, /suic guide: руководство, /suic reset: вернуть всё на места. Версия {1}.",
+	["/suic for the options, /suic move to move frames, /suic guide for the guide, /suic reset to put them all back, /suic perf for the performance monitor. Version {1}."] = "/suic: настройки, /suic move: двигать окна, /suic guide: руководство, /suic reset: вернуть всё на места, /suic perf: монитор производительности. Версия {1}.",
 	-- Jewelry: the slots and the short tags.
 	["Ring"] = "Кольцо",
 	["Trinket"] = "Аксессуар",
@@ -532,6 +532,39 @@ SUIC.WORDS.ru = {
 	["Your spells"] = "Ваши заклинания",
 	[" (max)"] = " (макс.)",
 	-- End of the jewels.
+
+	-- The performance monitor (Perf.lua, /suic perf), as Survivor UI's has it.
+	["Performance"] = "Производительность",
+	["Performance monitor on. It times every addon's OnUpdate and OnEvent; /suic perf hides or shows the window, /suic perf off stops it."] = "Монитор производительности включён. Он замеряет OnUpdate и OnEvent каждого аддона; /suic perf скрывает или показывает окно, /suic perf off выключает его.",
+	["Performance monitor off."] = "Монитор производительности выключен.",
+	["Performance report saved; the game writes it to SavedVariables when it closes. The heaviest scripts:"] = "Отчёт сохранён; игра запишет его в SavedVariables при закрытии. Самые тяжёлые скрипты:",
+	["Game or earlier addon"] = "Игра или аддон, загруженный раньше",
+	["FPS {1}   Frame {2} ms on average, worst {3} ms   Slow frames (over 50 ms): {4}"] = "FPS {1}   Кадр в среднем {2} мс, худший {3} мс   Медленных кадров (дольше 50 мс): {4}",
+	["Addon scripts {1} ms of each frame ({2}%)   Lua memory {3} MB, garbage {4} KB/s, collections {5}"] = "Скрипты аддонов: {1} мс каждого кадра ({2}%)   Память Lua {3} МБ, мусор {4} КБ/с, сборок {5}",
+	["{1} scripts watched for {2} s; the monitor itself {3} ms a frame. Click a column to sort."] = "Отслеживается скриптов: {1}, {2} с; сам монитор {3} мс за кадр. Нажмите на столбец для сортировки.",
+	["Stop"] = "Стоп",
+	["Report"] = "Отчёт",
+	["Scripts"] = "Скрипты",
+	["Addons"] = "Аддоны",
+	["Events"] = "События",
+	["Slow frames"] = "Медленные кадры",
+	["New frames"] = "Новые фреймы",
+	["Script"] = "Скрипт",
+	["Addon"] = "Аддон",
+	["Calls/s"] = "Вызовов/с",
+	["ms/s"] = "мс/с",
+	["Avg ms"] = "Сред. мс",
+	["Max ms"] = "Макс. мс",
+	["KB/s"] = "КБ/с",
+	["Event"] = "Событие",
+	["Made at"] = "Создан в",
+	["Frames"] = "Фреймы",
+	["Per min"] = "В минуту",
+	["Heaviest script in the frame"] = "Самый тяжёлый скрипт кадра",
+	["At (s)"] = "Время (с)",
+	["Frame ms"] = "Кадр, мс",
+	["Addons ms"] = "Аддоны, мс",
+	["Its ms"] = "Его мс",
 }
 
 -- The game's names of spells, pets and jewelry in Russian, back to English
