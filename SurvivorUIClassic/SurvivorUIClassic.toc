@@ -24,6 +24,8 @@ Crits.lua
 Tracker.lua
 BossBars.lua
 FloorHourglass.lua
+BarPanel.lua
+Shelf.lua
 BuildList.lua
 Jewelry.lua
 Meter.lua

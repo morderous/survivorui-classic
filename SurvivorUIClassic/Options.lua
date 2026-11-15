@@ -270,6 +270,11 @@ end }
 
 PAGES[2] = { "Action bar", "The game's action bar, its experience bar on top.", function(page)
 	Size(page, "Size", "bar")
+	-- BarPanel.lua (Lucas, 2026-11-14).
+	Setting(page, "The Build panel in place of the game's bar", "barPanel", "RefreshBarPanel",
+		"Your spells in a panel like the others: each icon always in sight, its rank on it, its share of your damage and its cooldown under it, your Damage, Crit, Crit Dmg and Luck on top, the talents' cooldowns at its left and your summons at its right. Off, the game's bar as it was, gryphons and all, and everything round it back in its old place.")
+	Setting(page, "A gold flash as a spell goes off", "barFlash", nil,
+		"On the Build panel, a button's rim flashes gold each time its spell goes off. A spell going off faster than every 0.6 sec keeps a steady, softer rim.")
 	Setting(page, "Cooldown text on the action bar", "cooldownText", "RefreshCooldowns",
 		"The seconds left on each button, the button darkened under them. OmniCC, when installed, does it instead.")
 	-- FloorHourglass.lua (Lucas, 2026-11-05).

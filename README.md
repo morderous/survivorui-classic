@@ -91,6 +91,12 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.23 (unreleased)
+
+#### New
+
+- **The Build panel:** the action bar as a panel of the same make as the others, in place of the game's bar. Each spell's icon stays in sight through its cooldown, a gold line at its foot running down with it, its rim flashing gold as the spell goes off. On the icon, its rank; under it, a small bar of its share of the run's damage in the damage meter's color, the share in numbers and its cooldown, green with the hourglass at the game's floor. On top, your Damage, Crit, Crit Dmg and Luck in the stats panel's colors; hover Luck for the odds of a rare, an epic and a legendary. The character and talent buttons, small, beside the racial; the level and the experience bar at the panel's foot. The talents' cooldowns stand in columns at the panel's left, your pets, summons and totems at its right, and the Level Up! button on its top. The spells stay where the game lays them while it is up. Off in the options' Action bar tab ("The Build panel in place of the game's bar"), and the game's bar comes back as it was, with everything round it in its old place.
+
 ### 0.2.22, 2026-11-10
 
 The performance monitor comes to SurvivorUI Classic: /suic perf.

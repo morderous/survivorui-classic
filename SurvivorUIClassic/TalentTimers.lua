@@ -18,7 +18,15 @@ local holder = CreateFrame("Frame", "SUICTalentTimers", UIParent)
 holder:SetWidth(SIZE)
 holder:SetHeight(SIZE + 14)
 
+-- Beside the Build panel (Shelf.lua) while the panel is up, at its left: the
+-- icons in columns from the bottom up, a column more at the right of the last.
 local function Home(f)
+	if SUIC.ShelfSeat and SUIC.ShelfSeat(f, "talents") then
+		return
+	end
+	f:SetPoint("BOTTOMLEFT", MainMenuBar, "TOPLEFT", 4, 6)
+end
+holder.suicHome = function(f)
 	f:SetPoint("BOTTOMLEFT", MainMenuBar, "TOPLEFT", 4, 6)
 end
 
@@ -87,7 +95,31 @@ for index = 1, MOST do
 	slots[index] = slot
 end
 
+-- The icons' places: a row from the left, or, beside the Build panel,
+-- columns from the bottom up.
+local laid
+
+local function Lay(columns)
+	if columns == laid then
+		return
+	end
+	laid = columns
+	local rows = SUIC.SIDE_ROWS or 3
+	for index = 1, MOST do
+		local slot = slots[index]
+		slot:ClearAllPoints()
+		if columns then
+			slot:SetPoint("BOTTOMLEFT", holder, "BOTTOMLEFT", math.floor((index - 1) / rows) * (SIZE + GAP),
+				math.mod(index - 1, rows) * (SIZE + GAP))
+		else
+			slot:SetPoint("TOPLEFT", holder, "TOPLEFT", (index - 1) * (SIZE + GAP), 0)
+		end
+	end
+end
+
 local function Draw()
+	local columns = SUIC.SideColumns and SUIC.SideColumns() or false
+	Lay(columns)
 	local shown = 0
 	if SUIC.InRun() then
 		local timers = AZS_GetTimers and AZS_GetTimers() or {}
@@ -122,8 +154,17 @@ local function Draw()
 	for index = shown + 1, MOST do
 		slots[index]:Hide()
 	end
-	-- As wide as its icons, held by its left edge: it grows inward.
-	holder:SetWidth(math.max(1, shown) * (SIZE + GAP) - GAP)
+	holder.count = shown
+	if columns then
+		-- As wide as its columns, held by its right edge at the panel's side.
+		local rows = SUIC.SIDE_ROWS or 3
+		holder:SetWidth(math.max(1, math.ceil(shown / rows)) * (SIZE + GAP) - GAP)
+		holder:SetHeight(rows * (SIZE + GAP) - GAP)
+	else
+		-- As wide as its icons, held by its left edge: it grows inward.
+		holder:SetWidth(math.max(1, shown) * (SIZE + GAP) - GAP)
+		holder:SetHeight(SIZE + 14)
+	end
 end
 
 local elapsed = 0

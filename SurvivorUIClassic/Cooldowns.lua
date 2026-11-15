@@ -6,8 +6,20 @@
 -- cooling down is darkened under its count. Every cooldown counts, the
 -- shortest too. Off in the options' Action bar tab. OmniCC does the same job;
 -- with it installed, this stands aside.
+--
+-- A button in the Build panel (BarPanel.lua) keeps its icon in sight: no dark
+-- and no sweep over it, a gold line at its foot running down with the
+-- cooldown, and the seconds small in its top left corner, from LONG up only
+-- (a spell every second would be a number flickering for ever). The line
+-- stays with the numbers off. As its spell goes off (its cooldown starts
+-- again), the button's rim flashes gold and fades; a spell going off faster
+-- than STEADY keeps a steady, softer rim, no flicker. Off in the options.
 
 local counters = {}
+local LONG = 3            -- a panel button's seconds are written from here up
+local THREAD = 3          -- the gold line's height
+local FLASH = 0.4         -- the rim's fade as a spell goes off
+local STEADY = 0.6        -- a cooldown under this: the rim stays lit
 
 local function TimeText(seconds)
 	if seconds >= 60 then
@@ -24,6 +36,23 @@ local function CounterUpdate()
 		this:Hide()
 		return
 	end
+	if this.bare then
+		this.thread:SetWidth(math.max(0.5, this.span * left / this.duration))
+		if this.lit then
+			local age = GetTime() - this.lit
+			if this.steady then
+				this.flash:SetAlpha(0.5)
+			elseif age < FLASH then
+				this.flash:SetAlpha(1 - age / FLASH)
+			else
+				this.lit = nil
+				this.flash:Hide()
+			end
+		end
+	end
+	if not this.words then
+		return
+	end
 	this.text:SetText(TimeText(left))
 	local soon = left <= (this.duration > 3 and 2 or 1)
 	if soon ~= this.soon then
@@ -34,6 +63,46 @@ local function CounterUpdate()
 			this.text:SetTextColor(1, 0.86, 0.1)
 		end
 	end
+end
+
+-- A counter's look, the panel's or the game's bar's, and whether its seconds
+-- are written; false when there is nothing of it to show.
+local function Dress(counter)
+	local bare = SUIC.OnPanel and SUIC.OnPanel(counter:GetParent()) and true or false
+	if bare ~= counter.bare then
+		counter.bare = bare
+		local font = counter.text:GetFont()
+		counter.text:ClearAllPoints()
+		if bare then
+			counter.dim:Hide()
+			counter.ground:Show()
+			counter.thread:Show()
+			counter.text:SetFont(font or STANDARD_TEXT_FONT, 11, "OUTLINE")
+			counter.text:SetPoint("TOPLEFT", counter, "TOPLEFT", 2, -2)
+		else
+			counter.dim:Show()
+			counter.ground:Hide()
+			counter.thread:Hide()
+			counter.flash:Hide()
+			counter.lit = nil
+			counter.text:SetFont(font or STANDARD_TEXT_FONT, 18, "OUTLINE")
+			counter.text:SetPoint("CENTER", counter, "CENTER", 0, 0)
+		end
+	end
+	counter.span = counter:GetParent():GetWidth() or 36
+	local words = SUIC.DB().cooldownText and (not bare or (counter.duration or 0) >= LONG) and true or false
+	if words ~= counter.words then
+		counter.words = words
+		if not words then
+			counter.text:SetText("")
+		end
+	end
+	-- The game's sweep darkens the icon: away on a panel button, back at the
+	-- next cooldown off it.
+	if bare and counter.cooldown then
+		counter.cooldown:Hide()
+	end
+	return bare or words
 end
 
 local function Counter(parent, cooldown)
@@ -48,6 +117,27 @@ local function Counter(parent, cooldown)
 	counter.dim:SetTexture(SUIC.FLAT)
 	counter.dim:SetVertexColor(0, 0, 0, 0.6)
 	counter.dim:SetAllPoints(counter)
+	counter.ground = counter:CreateTexture(nil, "BACKGROUND")
+	counter.ground:SetTexture(SUIC.FLAT)
+	counter.ground:SetVertexColor(0, 0, 0, 0.7)
+	counter.ground:SetHeight(THREAD)
+	counter.ground:SetPoint("BOTTOMLEFT", counter, "BOTTOMLEFT", 0, 0)
+	counter.ground:SetPoint("BOTTOMRIGHT", counter, "BOTTOMRIGHT", 0, 0)
+	counter.ground:Hide()
+	counter.thread = counter:CreateTexture(nil, "ARTWORK")
+	counter.thread:SetTexture(SUIC.FLAT)
+	counter.thread:SetVertexColor(1, 0.82, 0, 1)
+	counter.thread:SetHeight(THREAD)
+	counter.thread:SetPoint("BOTTOMLEFT", counter, "BOTTOMLEFT", 0, 0)
+	counter.thread:Hide()
+	-- The rim's flash: the game's own light of a button pressed, in gold.
+	counter.flash = counter:CreateTexture(nil, "OVERLAY")
+	counter.flash:SetTexture("Interface\\Buttons\\CheckButtonHilight")
+	counter.flash:SetBlendMode("ADD")
+	counter.flash:SetVertexColor(1, 0.82, 0.2)
+	counter.flash:SetAllPoints(counter)
+	counter.flash:Hide()
+	counter.cooldown = cooldown
 	counter.text = counter:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 	local font = counter.text:GetFont()
 	counter.text:SetFont(font or STANDARD_TEXT_FONT, 18, "OUTLINE")
@@ -60,11 +150,12 @@ local function Counter(parent, cooldown)
 	return counter
 end
 
--- The option, at once: a count under way comes back where it stands.
+-- The options, at once (the numbers', the Build panel's): a count under way
+-- comes back where it stands, in the look its button has now.
 function SUIC.RefreshCooldowns()
-	local on = SUIC.DB().cooldownText
 	for index = 1, table.getn(counters) do
 		local counter = counters[index]
+		local on = Dress(counter)
 		if on and counter.start and counter.start + counter.duration > GetTime() then
 			counter:Show()
 		else
@@ -86,12 +177,25 @@ SUIC.OnStart(function()
 		end
 		local counter = Counter(parent, cooldown)
 		if start and start > 0 and duration and duration > 0 and enable and enable > 0 then
+			local again = start ~= counter.start
 			counter.start, counter.duration = start, duration
-			if SUIC.DB().cooldownText then
+			if Dress(counter) then
 				counter:Show()
+			else
+				counter:Hide()
+			end
+			-- The spell went off: a new cooldown on a panel button.
+			if again and counter.bare and SUIC.DB().barFlash then
+				counter.lit, counter.steady = GetTime(), duration < STEADY
+				counter.flash:SetAlpha(counter.steady and 0.5 or 1)
+				counter.flash:Show()
+			elseif not SUIC.DB().barFlash and counter.lit then
+				counter.lit = nil
+				counter.flash:Hide()
 			end
 		else
 			counter.start = nil
+			counter.duration = nil
 			counter:Hide()
 		end
 	end

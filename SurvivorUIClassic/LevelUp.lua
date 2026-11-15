@@ -24,7 +24,14 @@ button:SetBackdropBorderColor(0.85, 0.65, 0.3, 1)
 button:RegisterForClicks("LeftButtonUp")
 button:Hide()
 
+-- On the Build panel's top (Shelf.lua) while the panel is up.
 local function Home(f)
+	if SUIC.ShelfSeat and SUIC.ShelfSeat(f, "levelup") then
+		return
+	end
+	f:SetPoint("BOTTOM", MainMenuBar, "TOP", 0, 196)
+end
+button.suicHome = function(f)
 	f:SetPoint("BOTTOM", MainMenuBar, "TOP", 0, 196)
 end
 Home(button)

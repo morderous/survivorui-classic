@@ -18,7 +18,16 @@ local holder = CreateFrame("Frame", "SUICSummons", UIParent)
 holder:SetWidth(4 * (SIZE + GAP))
 holder:SetHeight(COUNT + SIZE + 14)
 
+-- Beside the Build panel (Shelf.lua) while the panel is up, at its right: the
+-- icons in columns from the bottom up, a column more at the right of the
+-- last; how many are out on the icon, its time in the tooltip alone.
 local function Home(f)
+	if SUIC.ShelfSeat and SUIC.ShelfSeat(f, "summons") then
+		return
+	end
+	f:SetPoint("BOTTOMRIGHT", MainMenuBar, "TOPRIGHT", -4, 6)
+end
+holder.suicHome = function(f)
 	f:SetPoint("BOTTOMRIGHT", MainMenuBar, "TOPRIGHT", -4, 6)
 end
 
@@ -68,6 +77,34 @@ for index = 1, MOST do
 	slots[index] = slot
 end
 
+-- The icons' places: a row from the right, the count over each and its time
+-- under it; or, beside the Build panel, columns from the bottom up, the
+-- count on the icon.
+local laid
+
+local function Lay(columns)
+	if columns == laid then
+		return
+	end
+	laid = columns
+	local rows = SUIC.SIDE_ROWS or 3
+	for index = 1, MOST do
+		local slot = slots[index]
+		slot:ClearAllPoints()
+		slot.number:ClearAllPoints()
+		if columns then
+			slot:SetPoint("BOTTOMLEFT", holder, "BOTTOMLEFT", math.floor((index - 1) / rows) * (SIZE + GAP),
+				math.mod(index - 1, rows) * (SIZE + GAP))
+			slot.number:SetPoint("BOTTOMRIGHT", slot, "BOTTOMRIGHT", 1, 1)
+			slot.time:Hide()
+		else
+			slot:SetPoint("TOPRIGHT", holder, "TOPRIGHT", -(index - 1) * (SIZE + GAP), -COUNT)
+			slot.number:SetPoint("BOTTOM", slot, "TOP", 0, 1)
+			slot.time:Show()
+		end
+	end
+end
+
 local function Fill(index, name, icon, count, limit, left)
 	local slot = slots[index]
 	slot.name, slot.out, slot.limit, slot.left = name, count, limit, left
@@ -84,6 +121,8 @@ local function Fill(index, name, icon, count, limit, left)
 end
 
 local function Draw()
+	local columns = SUIC.SideColumns and SUIC.SideColumns() or false
+	Lay(columns)
 	local shown = 0
 	if SUIC.InRun() then
 		local groups = AZS_GetSummonGroups and AZS_GetSummonGroups() or {}
@@ -109,7 +148,15 @@ local function Draw()
 	for index = shown + 1, MOST do
 		slots[index]:Hide()
 	end
-	holder:SetWidth(math.max(1, shown) * (SIZE + GAP))
+	holder.count = shown
+	if columns then
+		local rows = SUIC.SIDE_ROWS or 3
+		holder:SetWidth(math.max(1, math.ceil(shown / rows)) * (SIZE + GAP) - GAP)
+		holder:SetHeight(rows * (SIZE + GAP) - GAP)
+	else
+		holder:SetWidth(math.max(1, shown) * (SIZE + GAP))
+		holder:SetHeight(COUNT + SIZE + 14)
+	end
 end
 
 local elapsed = 0
