@@ -97,6 +97,12 @@ end
 -- For the combat numbers: a source in the color its line has here.
 SUIC.MeterColor = ColorOf
 
+-- The palette's color by its place: Run History's, for a run kept with no
+-- colors.
+function SUIC.MeterShade(index)
+	return PALETTE[math.mod(index - 1, table.getn(PALETTE)) + 1]
+end
+
 local function ClassColor(class)
 	local r, g, b = SUIC.ClassColor(class)
 	if r then

@@ -272,7 +272,7 @@ PAGES[2] = { "Action bar", "The game's action bar, its experience bar on top.", 
 	Size(page, "Size", "bar")
 	-- BarPanel.lua (Lucas, 2026-11-14).
 	Setting(page, "The Build panel in place of the game's bar", "barPanel", "RefreshBarPanel",
-		"Your spells in a panel like the others: each icon always in sight, its rank on it, its share of your damage and its cooldown under it, your Damage, Crit, Crit Dmg and Luck on top, the talents' cooldowns at its left and your summons at its right. Off, the game's bar as it was, gryphons and all, and everything round it back in its old place.")
+		"Your spells in a panel like the others: each icon always in sight, its rank and its cooldown under it, your Damage, Crit, Crit Dmg and Luck on top, the talents' cooldowns at its left and your summons at its right. Off, the game's bar as it was, gryphons and all, and everything round it back in its old place.")
 	Setting(page, "A gold flash as a spell goes off", "barFlash", nil,
 		"On the Build panel, a button's rim flashes gold each time its spell goes off. A spell going off faster than every 0.6 sec keeps a steady, softer rim.")
 	Setting(page, "Cooldown text on the action bar", "cooldownText", "RefreshCooldowns",
@@ -367,6 +367,8 @@ end }
 
 PAGES[7] = { "Build list", "Your six spell slots and your racial, with their ranks and cooldowns.", function(page)
 	Setting(page, "Show the build list", "buildList", "RefreshBuildList")
+	Setting(page, "Damage, Crit and Crit Dmg on top", "buildStats", "RefreshBuildList",
+		"Your three numbers in a line over the spells. The Build panel and the stats panel show them too.")
 	Size(page, "Size", "build")
 	Reset(page, { "build" })
 end }
@@ -490,7 +492,7 @@ local TEXT_PAGE = { "Combat text", "The numbers over the enemies you hit and ove
 	end, function(value) return value.."%" end)
 	Header(page, "Survivor UI's numbers")
 	Setting(page, "Use them in place of the game's numbers", "ctColumns", "ApplyCombatText",
-		"Columns by your hero, each moved with Move frames, in place of numbers over the enemies.")
+		"Each with its spell's icon: over the enemies they hit, or in columns by your hero, each moved with Move frames.")
 	-- Two to a row.
 	local function Both(left, leftKey, right, rightKey)
 		Setting(page, left, leftKey)
@@ -502,7 +504,7 @@ local TEXT_PAGE = { "Combat text", "The numbers over the enemies you hit and ove
 	Both("Spell icons", "ctIcons", "The damage meter's colors", "ctColors")
 	Both("Add up close hits (x3)", "ctAdd", "Crits in their own column", "ctCritColumn")
 	Both("Damage over time", "ctPeriodic", "Damage you take", "ctHitsTaken")
-	Setting(page, "Healing", "ctHeals")
+	Both("Healing", "ctHeals", "Over the enemies", "ctOverEnemies")
 	Slider(page, "Size", 0.6, 1.5, 0.05, function() return tonumber(SUIC.DB().ctSize) or 1 end, function(value)
 		SUIC.DB().ctSize = value
 	end, Percent)
@@ -683,6 +685,23 @@ table.insert(PAGES, { "World markers", "From the game's 0.139.2: marks drawn on 
 	World("Lairs", "worldLairs", "The guardian's name over its lair while it sleeps; awake, over the guardian itself, following it; slain, back over the lair with the time until it comes back.")
 	World("Arrows", "worldArrows", "For friends down, caches and lairs out of sight: an arrow on a ring round you toward the nearest few, with how far.")
 	World("Explosive orbs", "worldOrbs", "In a run with the Explosive affix, a pulsing mark over each orb: only direct hits hurt them.")
+end })
+
+-- Run History (RunHistory.lua).
+table.insert(PAGES, { "Run History", "Every run you end is kept with its numbers, its build, its damage and its loot. Open it with the small button under the talents' in the Build panel, or with /suic history.", function(page)
+	Radio(page, "Runs kept", { { "all", "@runs:All" }, { "victories", "Victories only" }, { "none", "@runs:None" } },
+		function() return SUIC.DB().historyWhich or "all" end,
+		function(value) SUIC.DB().historyWhich = value end)
+	Slider(page, "How many runs are kept", 10, 200, 10, function() return tonumber(SUIC.DB().historyKeep) or 100 end, function(value)
+		SUIC.DB().historyKeep = value
+	end, function(value) return tostring(value) end)
+	Note(page, "Past that many, the oldest runs go as a new one is kept. A pinned run always stays.")
+	Button(page, "Open Run History", 160, function()
+		if SUIC.ToggleRunHistory then
+			SUIC.ToggleRunHistory()
+		end
+	end)
+	page.y = page.y - 26
 end })
 
 ------------------------------------------------------------------------------

@@ -266,6 +266,10 @@ function feed.DropOldest()
 	table.insert(feed.spare, hit)
 end
 
+-- Each enemy's last hit's place, by the enemy's name: where a hit goes that
+-- no line of the feed answers for (a tick, a pet's, one read too late).
+feed.lastOf = {}
+
 function feed.Read()
 	local now = GetTime()
 	feed.readAt = now
@@ -294,6 +298,10 @@ function feed.Read()
 				local hit = table.remove(feed.spare) or {}
 				hit.at, hit.amount, hit.crit, hit.ability = now, amount, one.critical, one.abilityName
 				hit.meter, hit.key = one.meterSource, one.meterSourceKey
+				hit.id, hit.target, hit.held = one.anchorId, one.targetName, nil
+				if one.anchorId and one.targetName then
+					feed.lastOf[one.targetName] = one.anchorId
+				end
 				hit.amountKey = Key(amount, hit.crit)
 				feed.last = feed.last + 1
 				feed.ring[feed.last] = hit
@@ -355,6 +363,33 @@ function feed.Line(name, line)
 		return nil
 	end
 	return found.meter
+end
+
+-- The place in the world of a combat log line's hit (the game's 0.138), for
+-- the combat numbers over the enemies (CombatColumns.lua): the last hit of its
+-- amount and crit on that target not yet given out; a hit not found goes where
+-- that enemy was last hit. Nil without the feed, and for an enemy never hit.
+function SUIC.HitAnchor(target, amount, crit)
+	amount = tonumber(amount)
+	if not (AZS_GetCombatTextEvents and amount) then
+		return nil
+	end
+	if feed.readAt ~= GetTime() then
+		feed.Read()
+	end
+	local list = feed.byAmount[Key(amount, crit)]
+	if not list then
+		return target and feed.lastOf[target]
+	end
+	local stop = math.max(list.head, list.tail - feed.LOOK + 1)
+	for index = list.tail, stop, -1 do
+		local hit = list[index]
+		if hit.id and not hit.held and hit.target == target then
+			hit.held = true
+			return hit.id
+		end
+	end
+	return target and feed.lastOf[target]
 end
 
 -- The feed read now, where this frame has not yet: for the meter's counts,

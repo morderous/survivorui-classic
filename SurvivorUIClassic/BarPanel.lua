@@ -9,11 +9,10 @@
 -- dark over it, a gold line at its foot running down, the seconds small in a
 -- corner from three up. An empty socket says so.
 --
--- On each spell's icon, its rank in a corner (R3), where the game writes how
--- many of an item there are. Under it, a small bar of its share of the run's
--- damage, in the color the damage meter gives the spell, the share in numbers
--- and, in grey, its cooldown (at the game's floor in green with the
--- hourglass, as the build list's). The mouse on them tells each by its name.
+-- Under each spell's icon, in its middle, its rank (R3) and, in grey, its
+-- cooldown (at the game's floor in green with the hourglass, as the build
+-- list's). The mouse on them tells each by its name. The spell's share of
+-- the damage is the damage meter's alone (Lucas, 2026-11-15).
 --
 -- The top line, no title on it: the hero's Damage, Crit, Crit Dmg and Luck in
 -- its middle, the mouse on Luck telling the odds of an epic and of a
@@ -40,19 +39,19 @@ local BUTTON = 36
 local PITCH = 49          -- from a spell's left to the next one's
 local LEFT = 14           -- the first spell from the panel's left
 local RACIAL_X = LEFT + SLOTS * PITCH + 10
-local MICRO_X = RACIAL_X + BUTTON + 9   -- the two small buttons, beside the racial
+local MICRO_X = RACIAL_X + BUTTON + 9   -- the three small buttons, beside the racial
 local MICRO_W, MICRO_H = 20, 22
-local MICRO_GAP = 9
+local MICRO_GAP = 4
+local MICROS = 3
 local WIDTH = MICRO_X + MICRO_W + 9
 local FOOT = 18           -- the panel's foot: the level and the experience bar
 local LINE = 12           -- a line of words under a spell
 local FONT = 10
-local BAR = 5             -- the damage bar's height
-local BUTTON_Y = FOOT + 3 + 2 * LINE + 2 + BAR + 4   -- the buttons' feet over the panel's bottom
+local BUTTON_Y = FOOT + 3 + 2 * LINE + 4   -- the buttons' feet over the panel's bottom
 local PANEL_HEIGHT = BUTTON_Y + BUTTON + PAD + SUIC.TITLE
 local AWAY = -4000        -- off the screen: a piece of the game's that shows itself again
 local GREEN = { 0.35, 0.95, 0.45 }   -- as the build list's floor
-local PEACH = { 1, 0.67, 0.38 }      -- as the character page's crit
+local GOLD = { 1, 0.82, 0 }
 local GREY = { 0.62, 0.6, 0.55 }
 local ART_PATH = "Interface\\AddOns\\SurvivorUIClassic\\Art\\"
 
@@ -150,8 +149,7 @@ function SUIC.OnPanel(button)
 end
 
 ------------------------------------------------------------------------------
--- Each spell's own: its rank on the icon, and under it the damage bar, the
--- share and the cooldown.
+-- Each spell's own, under its icon: its rank and its cooldown.
 
 local columns = {}        -- [the button's id] = its pieces
 
@@ -185,7 +183,7 @@ local function Column(id)
 	end
 	local column = { button = button, words = {} }
 	local x = SlotX(id)
-	-- The mouse's ground, the bar and the two lines under the button.
+	-- The mouse's ground, the two lines under the button.
 	local zone = CreateFrame("Frame", nil, panel)
 	zone:SetWidth(PITCH)
 	zone:SetHeight(BUTTON_Y - FOOT - 2)
@@ -196,39 +194,16 @@ local function Column(id)
 	zone:SetScript("OnLeave", ColumnUntip)
 	zone:SetScript("OnHide", ColumnUntip)
 	column.zone = zone
-	local fill = CreateFrame("StatusBar", nil, zone)
-	fill:SetWidth(BUTTON)
-	fill:SetHeight(BAR)
-	fill:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", x, BUTTON_Y - 4)
-	fill:SetStatusBarTexture(SUIC.BAR)
-	fill:SetMinMaxValues(0, 1)
-	fill:SetValue(0)
-	local ground = fill:CreateTexture(nil, "BACKGROUND")
-	ground:SetTexture(SUIC.FLAT)
-	ground:SetVertexColor(0, 0, 0, 0.6)
-	ground:SetAllPoints(fill)
-	column.fill = fill
-	column.share = SUIC.Text(zone, "GameFontHighlightSmall", FONT)
-	column.share:SetPoint("TOP", fill, "BOTTOM", 0, -2)
+	column.rank = SUIC.Text(zone, "GameFontHighlightSmall", FONT)
+	column.rank:SetPoint("TOP", panel, "BOTTOMLEFT", x + BUTTON / 2, BUTTON_Y - 4)
 	column.cd = SUIC.Text(zone, "GameFontHighlightSmall", FONT)
-	column.cd:SetPoint("TOP", fill, "BOTTOM", 0, -2 - LINE)
+	column.cd:SetPoint("TOP", panel, "BOTTOMLEFT", x + BUTTON / 2, BUTTON_Y - 4 - LINE)
 	column.glass = zone:CreateTexture(nil, "OVERLAY")
 	column.glass:SetTexture(ART_PATH.."FloorHourglass")
 	column.glass:SetWidth(9)
 	column.glass:SetHeight(9)
 	column.glass:SetPoint("LEFT", column.cd, "RIGHT", 1, 0)
 	column.glass:Hide()
-	-- The rank, on the button, over its icon and its cooldown's line.
-	local badge = CreateFrame("Frame", nil, button)
-	badge:SetAllPoints(button)
-	badge:SetFrameLevel(button:GetFrameLevel() + 2)
-	badge.text = badge:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
-	local font = badge.text:GetFont()
-	badge.text:SetFont(font or STANDARD_TEXT_FONT, 11, "OUTLINE")
-	badge.text:SetPoint("BOTTOMRIGHT", badge, "BOTTOMRIGHT", -1, 4)
-	badge.text:SetTextColor(1, 1, 1)
-	badge:Hide()
-	column.badge = badge
 	columns[id] = column
 end
 
@@ -247,50 +222,17 @@ local function Say(text, words, color)
 	end
 end
 
--- Each spell's damage of the run, its share and its line's name, by its key:
--- the meter's lines (its plain ones, a proc's line is its talent's) whose
--- source is the spell.
-local function Damage(spells)
-	local feed = SUIC.MeterFeed
-	if not (feed and feed.Has and feed.Has() and feed.Sources) then
-		return nil
-	end
-	local ok, lines = pcall(feed.Sources, { metric = "damage", period = "run" })
-	if not ok or type(lines) ~= "table" then
-		return nil
-	end
-	local found = {}
-	for index = 1, table.getn(spells) do
-		local key = spells[index].key
-		-- The meter's key of a spell: "ability:auto_shot:r4" (seen 2026-11-14).
-		local head = key and ("ability:"..key..":")
-		for at = 1, table.getn(lines) do
-			local line = lines[at]
-			local source = line.sourceKey
-			if key and line.proc ~= 1 and type(source) == "string"
-				and (source == key or string.sub(source, 1, string.len(head)) == head) then
-				found[key] = found[key] or { dmg = 0, share = 0, name = line.name }
-				found[key].dmg = found[key].dmg + (line.dmg or 0)
-				found[key].share = found[key].share + (line.share or 0)
-			end
-		end
-	end
-	return found
-end
-
 local function Blank(id)
 	local column = columns[id]
 	if column then
 		column.spell = nil
-		column.fill:Hide()
-		Say(column.share, "")
+		Say(column.rank, "")
 		Say(column.cd, "")
 		column.glass:Hide()
-		column.badge:Hide()
 	end
 end
 
-local function Fill(id, entry, damage, most, racial)
+local function Fill(id, entry, racial)
 	local column = columns[id]
 	if not column then
 		return
@@ -298,45 +240,13 @@ local function Fill(id, entry, damage, most, racial)
 	local words = {}
 	column.spell = SUIC.Native((SUIC.SpellName and SUIC.SpellName(id)) or string.gsub(entry.key or "?", "_", " "))
 	local rank = tonumber(entry.rank)
-	if rank and not racial then
-		local said = SUIC.TF("R{1}", rank)
-		if said ~= column.badge.said then
-			column.badge.said = said
-			column.badge.text:SetText(said)
-		end
-		column.badge:Show()
+	if racial then
+		Say(column.rank, SUIC.T("Racial"))
+	elseif rank then
+		Say(column.rank, SUIC.TF("R{1}", rank), GOLD)
 		table.insert(words, SUIC.TF("Rank {1}. It goes up with this spell's cards at a level-up.", rank))
 	else
-		column.badge:Hide()
-	end
-	local done = damage and entry.key and damage[entry.key]
-	if done and done.dmg > 0 then
-		local share = math.floor(done.share * 100 + 0.5)
-		local color = SUIC.MeterColor and SUIC.MeterColor(done.name)
-		if color then
-			column.fill:SetStatusBarColor(color[1], color[2], color[3], 0.9)
-		else
-			column.fill:SetStatusBarColor(PEACH[1], PEACH[2], PEACH[3], 0.9)
-		end
-		column.fill:SetValue(most > 0 and done.share / most or 0)
-		column.fill:Show()
-		Say(column.share, share.."%", PEACH)
-		table.insert(words, SUIC.TF("{1} of your damage this run: {2}.", share.."%", SUIC.Short(done.dmg)))
-	else
-		column.fill:SetValue(0)
-		if racial or not damage then
-			column.fill:Hide()
-		else
-			column.fill:Show()
-		end
-		if racial then
-			Say(column.share, SUIC.T("Racial"))
-		else
-			Say(column.share, damage and "-" or "")
-			if damage then
-				table.insert(words, SUIC.T("No damage of its own in the meter: what it does through a pet, a talent or an effect counts on that line."))
-			end
-		end
+		Say(column.rank, "")
 	end
 	local seconds, floor = SUIC.TrueCooldown(entry.key, entry.cdmax)
 	if seconds <= 0 then
@@ -445,9 +355,9 @@ local function Small(art, place, words, binding, click)
 	local button = CreateFrame("Button", nil, panel)
 	button:SetWidth(MICRO_W)
 	button:SetHeight(MICRO_H)
-	-- The two in the middle of the panel's body, between its rule and its foot.
+	-- The three in the middle of the panel's body, between its rule and its foot.
 	local middle = (FOOT + 2 + PANEL_HEIGHT - SUIC.TITLE) / 2
-	local top = middle + (2 * MICRO_H + MICRO_GAP) / 2
+	local top = middle + (MICROS * MICRO_H + (MICROS - 1) * MICRO_GAP) / 2
 	button:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", MICRO_X, top - (place - 1) * (MICRO_H + MICRO_GAP))
 	local face = button:CreateTexture(nil, "ARTWORK")
 	face:SetTexture("Interface\\Buttons\\UI-MicroButton"..art.."-Up")
@@ -489,6 +399,19 @@ Small("-Talents", 2, "TALENTS_BUTTON", "TOGGLETALENTS", function()
 	if ToggleTalentFrame then
 		ToggleTalentFrame()
 	end
+end)
+-- Run History (RunHistory.lua), under the talents: the quest log's button,
+-- with a word of what it opens.
+local history = Small("-Quest", 3, "", nil, function()
+	if SUIC.ToggleRunHistory then
+		SUIC.ToggleRunHistory()
+	end
+end)
+history:SetScript("OnEnter", function()
+	GameTooltip:SetOwner(this, "ANCHOR_TOP")
+	GameTooltip:SetText(SUIC.T("Run History"), 1, 1, 1)
+	GameTooltip:AddLine(SUIC.T("The runs you ended, each with its numbers."), 1, 0.82, 0, 1)
+	GameTooltip:Show()
 end)
 
 ------------------------------------------------------------------------------
@@ -614,9 +537,6 @@ end
 
 local function Lower()
 	panel:Hide()
-	for _, column in pairs(columns) do
-		column.badge:Hide()
-	end
 	for index = 1, table.getn(ART) do
 		local name = ART[index]
 		local art = getglobal(name)
@@ -674,20 +594,15 @@ local function Draw()
 	local spells = AZS_SPELLS or {}
 	local total = SUIC.InRun() and table.getn(spells) or 0
 	local slotted = math.max(0, total - 1)
-	local damage = total > 0 and Damage(spells) or nil
-	local most = 0
-	for _, done in pairs(damage or {}) do
-		most = math.max(most, done.share)
-	end
 	for index = 1, SLOTS do
 		if index <= slotted then
-			Fill(index, spells[index], damage, most, false)
+			Fill(index, spells[index], false)
 		else
 			Blank(index)
 		end
 	end
 	if total > 0 then
-		Fill(RACIAL, spells[total], damage, most, true)
+		Fill(RACIAL, spells[total], true)
 	else
 		Blank(RACIAL)
 	end

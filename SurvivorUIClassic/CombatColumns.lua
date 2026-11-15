@@ -7,6 +7,13 @@
 -- up in one number (x3). Each with its source's icon and the damage meter's
 -- color, as chosen.
 --
+-- Over the enemies (as chosen, and so it comes): the damage you deal stays
+-- where each hit landed, in the world, a line's climb and no more, the hits on
+-- one enemy in a small pile; the game engine's own numbers climb two yards and
+-- nothing an addon sets shortens that. A hit the game has no place for is not
+-- shown: nothing of the damage you deal goes to a column at the side (Lucas,
+-- 2026-11-15).
+--
 -- The hits come from the combat log, the ones you take from the combat text's
 -- own feed, the heals from the game's healing meter as it changes (a trickle
 -- gathers until it is worth a number). CombatText.lua keeps the game's own
@@ -22,6 +29,8 @@ local HIT_SIZE, TICK_SIZE = 15, 13
 local ADD_WINDOW = 0.5          -- hits this close together add up
 local HEAL_SHARE = 0.02         -- a heal worth a number: this much of max health
 local FADE_IN, FADE_OUT, FADE_LIFT = 0.10, 0.50, 10
+-- Over the enemies: the climb, the lines of a pile apart, and how many lines.
+local OVER_REACH, OVER_GAP, OVER_PILE = 14, 12, 3
 
 -- Five grid squares out (Move frames' lines are 32 apart); the heals over the
 -- hero, the hits taken under it.
@@ -117,7 +126,8 @@ local function Dress(text, kind, crit, source)
 	end
 	local icon = (dealt or kind == "heal") and source and db.ctIcons and SourceIcon(source)
 	if icon then
-		local edge = math.floor((crit and CRIT_SIZE or 16) * (tonumber(db.ctSize) or 1) + 0.5)
+		-- A fifth smaller than the number's line, so the number leads (Lucas, 2026-11-15).
+		local edge = math.floor((crit and CRIT_SIZE or 16) * 0.8 * (tonumber(db.ctSize) or 1) + 0.5)
 		text.icon:SetTexture(icon)
 		text.icon:SetWidth(edge)
 		text.icon:SetHeight(edge)
@@ -155,7 +165,7 @@ local function AddUp(key, kind, amount)
 	return true
 end
 
-local function Spawn(kind, amount, crit, periodic, source)
+local function Spawn(kind, amount, crit, periodic, source, target)
 	local db = SUIC.DB()
 	amount = tonumber(amount)
 	if not amount or (periodic and not db.ctPeriodic) or (kind == "taken" and not db.ctHitsTaken)
@@ -166,8 +176,17 @@ local function Spawn(kind, amount, crit, periodic, source)
 	if kind == "dealt" and crit and db.ctCritColumn then
 		kind = "crit"
 	end
-	local key = kind..(crit and "!" or "")..(periodic and "~" or "")..(source or "")
+	-- Over the enemies, where the game tells the hits' places: an enemy's hits
+	-- add up apart from another's.
+	local over = target and (kind == "dealt" or kind == "crit") and db.ctOverEnemies
+		and SUIC.HitAnchor and AZS_ProjectCombatTextAnchors and AZS_RegisterCombatTextFrameHandler
+	local key = kind..(crit and "!" or "")..(periodic and "~" or "")..(source or "")..(over and "@"..target or "")
 	if AddUp(key, kind, amount) then
+		return
+	end
+	-- Its hit's place; over the enemies a hit with none is not shown.
+	local anchor = over and SUIC.HitAnchor(target, amount, crit) or nil
+	if over and not anchor then
 		return
 	end
 	local text = FreeText()
@@ -176,13 +195,17 @@ local function Spawn(kind, amount, crit, periodic, source)
 	end
 	text.sum, text.count, text.addKey, text.relabel = amount, 1, key, nil
 	lastOf[key] = text
+	-- Held to its hit (PlaceAnchored, from this frame on), unseen until placed.
+	text.anchor = anchor
+	text.away, text.off, text.placed = text.anchor and true or nil, 0, nil
 	local column = COLUMNS[kind]
 	local startX, startY = StartOf(kind)
 	local now = GetTime()
-	local stack = stacks[kind] or { at = 0, count = 0 }
-	stacks[kind] = stack
+	local pile = text.anchor and target or kind
+	local stack = stacks[pile] or { at = 0, count = 0 }
+	stacks[pile] = stack
 	if now - stack.at < 0.12 then
-		stack.count = math.mod(stack.count + 1, 5)
+		stack.count = math.mod(stack.count + 1, text.anchor and OVER_PILE or 5)
 	else
 		stack.count = 0
 	end
@@ -211,6 +234,10 @@ local function Spawn(kind, amount, crit, periodic, source)
 	text.x = startX
 	text.y = startY - column.rise * stack.count * GAP
 	text.rise = column.reach * column.rise
+	if text.anchor then
+		text.pile = -stack.count * OVER_GAP * (tonumber(db.ctSize) or 1)
+		text.rise = OVER_REACH
+	end
 	text:SetAlpha(0)
 	text:Show()
 	live = live + 1
@@ -237,11 +264,14 @@ layer:SetScript("OnUpdate", function()
 			end
 			if t >= 1 then
 				text.live = nil
+				text.anchor = nil
 				text:Hide()
 				text.icon:Hide()
 				live = live - 1
 			else
-				local eased = 1 - (1 - t) * (1 - t) * 0.5 - 0.5 * (1 - t)
+				-- In a column a steady scroll, so it reads; over an enemy
+				-- quick at first, then still.
+				local eased = text.anchor and (1 - (1 - t) * (1 - t)) or (1 - (1 - t) * (1 - t) * 0.5 - 0.5 * (1 - t))
 				local alpha, lift = 1, 0
 				if t < FADE_IN then
 					local part = t / FADE_IN
@@ -252,14 +282,75 @@ layer:SetScript("OnUpdate", function()
 					alpha = 1 - part * part
 				end
 				local down = text.rise < 0 and -1 or 1
+				-- A hit the game gave no place on the screen for, a moment
+				-- on: over.
+				if text.away and not text.placed and text.age > 0.25 then
+					text.age = text.life
+				end
+				if text.away then
+					alpha = 0
+				end
+				text.off = text.rise * eased - down * lift
 				text:ClearAllPoints()
-				text:SetPoint("CENTER", UIParent, "BOTTOMLEFT", text.x, text.y + text.rise * eased - down * lift)
+				text:SetPoint("CENTER", UIParent, "BOTTOMLEFT", text.x, text.y + text.off)
 				text:SetAlpha(alpha)
 				text.icon:SetAlpha(alpha)
 			end
 		end
 	end
 end)
+
+-- The numbers held to their hits, where the game says those landed: run after
+-- the camera moves, so they do not trail behind it. A place off the screen
+-- hides its number.
+local function PlaceAnchored()
+	if live == 0 then
+		return
+	end
+	local ids, held
+	for index = 1, table.getn(texts) do
+		local text = texts[index]
+		if text.live and text.anchor then
+			if not ids then
+				ids, held = {}, {}
+			end
+			-- Several numbers may share a place: a chain of them.
+			if not held[text.anchor] then
+				table.insert(ids, text.anchor)
+			end
+			text.also = held[text.anchor]
+			held[text.anchor] = text
+		end
+	end
+	if not ids then
+		return
+	end
+	local result = AZS_ProjectCombatTextAnchors(ids, "impact")
+	if not result then
+		return
+	end
+	local ratio = WorldFrame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	for index = 1, table.getn(result.entries or {}) do
+		local entry = result.entries[index]
+		local text = held[entry.anchorId]
+		while text do
+			text.away = entry.state ~= "onScreen" or not entry.x
+			if not text.away then
+				text.placed = true
+				text.x, text.y = entry.x * ratio, entry.y * ratio + text.pile
+				text:ClearAllPoints()
+				text:SetPoint("CENTER", UIParent, "BOTTOMLEFT", text.x, text.y + text.off)
+			end
+			local after = text.also
+			text.also = nil
+			text = after
+		end
+	end
+end
+
+if AZS_RegisterCombatTextFrameHandler then
+	AZS_RegisterCombatTextFrameHandler(PlaceAnchored)
+end
 
 ------------------------------------------------------------------------------
 -- The hits, from the combat log.
@@ -355,7 +446,7 @@ local function Parse(line)
 			_, _, who, target, amount = string.find(line, "^(.-) crit (.+) for (%d+)")
 		end
 		if target then
-			return amount, true, false, SourceOf(who, line)
+			return amount, true, false, SourceOf(who, line), target
 		end
 	end
 	if string.find(line, " hit", 1, true) then
@@ -364,14 +455,14 @@ local function Parse(line)
 			_, _, who, target, amount = string.find(line, "^(.-) hit (.+) for (%d+)")
 		end
 		if target then
-			return amount, false, false, SourceOf(who, line)
+			return amount, false, false, SourceOf(who, line), target
 		end
 	end
 	-- "Kobold Vermin suffers 12 Fire damage from your Flame Shock."
 	local spell
 	_, _, target, amount, spell = string.find(line, "^(.+) suffers (%d+) .+ from your (.-)%.?$")
 	if target then
-		return amount, false, true, spell
+		return amount, false, true, spell, target
 	end
 end
 
@@ -434,9 +525,9 @@ listener:SetScript("OnEvent", function()
 		Rest(arg1 or "")
 		return
 	end
-	local amount, crit, periodic, source = Parse(arg1 or "")
+	local amount, crit, periodic, source, target = Parse(arg1 or "")
 	if amount then
-		Spawn("dealt", amount, crit, periodic, source)
+		Spawn("dealt", amount, crit, periodic, source, target)
 	end
 end)
 

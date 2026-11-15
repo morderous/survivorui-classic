@@ -40,8 +40,33 @@ stats:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -SUIC.TITLE + 2)
 stats:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PAD, -SUIC.TITLE + 2)
 stats:SetJustifyH("LEFT")
 panel.rule:ClearAllPoints()
-panel.rule:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, -SUIC.TITLE - 12)
-panel.rule:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -6, -SUIC.TITLE - 12)
+-- The hero's three numbers on top are a choice, off as it comes (Lucas,
+-- 2026-11-15: the Build panel and the stats panel have them): without them
+-- everything under their line goes up into its room. All of that hangs from
+-- this frame, which Seat lifts.
+local STATS_ROOM = 14
+local body = CreateFrame("Frame", nil, panel)
+body:SetHeight(1)
+local seated
+local function Seat()
+	local on = SUIC.DB().buildStats and true or false
+	if seated == on then
+		return
+	end
+	seated = on
+	local lift = on and 0 or STATS_ROOM
+	body:ClearAllPoints()
+	body:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, lift)
+	body:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, lift)
+	panel:SetHeight(TOP + (SLOTS + 1) * ROW + 5 + 6 - lift)
+	if on then
+		stats:Show()
+	else
+		stats:Hide()
+	end
+end
+panel.rule:SetPoint("TOPLEFT", body, "TOPLEFT", 6, -SUIC.TITLE - 12)
+panel.rule:SetPoint("TOPRIGHT", body, "TOPRIGHT", -6, -SUIC.TITLE - 12)
 
 -- The spell's name as its button's tooltip gives it, in the game's language.
 local scan = CreateFrame("GameTooltip", "SUICScanTip", nil, "GameTooltipTemplate")
@@ -158,7 +183,7 @@ for index = 1, SLOTS + 1 do
 	if index > SLOTS then
 		y = y - 5
 	end
-	row:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, y)
+	row:SetPoint("TOPLEFT", body, "TOPLEFT", PAD, y)
 	row:EnableMouse(true)
 	row:SetScript("OnEnter", RowEnter)
 	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -215,8 +240,8 @@ for index = 1, table.getn(DIVIDERS) do
 	line:SetTexture(SUIC.FLAT)
 	line:SetVertexColor(1, 1, 1, 0.08)
 	line:SetWidth(1)
-	line:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PAD - DIVIDERS[index], -TOP)
-	line:SetPoint("BOTTOMRIGHT", panel, "TOPRIGHT", -PAD - DIVIDERS[index], -TOP - (SLOTS + 1) * ROW - 5)
+	line:SetPoint("TOPRIGHT", body, "TOPRIGHT", -PAD - DIVIDERS[index], -TOP)
+	line:SetPoint("BOTTOMRIGHT", body, "TOPRIGHT", -PAD - DIVIDERS[index], -TOP - (SLOTS + 1) * ROW - 5)
 end
 
 -- A line between the slots and the racial.
@@ -224,8 +249,8 @@ local rule = panel:CreateTexture(nil, "ARTWORK")
 rule:SetTexture(SUIC.FLAT)
 rule:SetVertexColor(0.6, 0.6, 0.6, 0.3)
 rule:SetHeight(1)
-rule:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -TOP - SLOTS * ROW - 2)
-rule:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PAD, -TOP - SLOTS * ROW - 2)
+rule:SetPoint("TOPLEFT", body, "TOPLEFT", PAD, -TOP - SLOTS * ROW - 2)
+rule:SetPoint("TOPRIGHT", body, "TOPRIGHT", -PAD, -TOP - SLOTS * ROW - 2)
 
 -- A cooldown's number: under a second to two decimals with no zero at the
 -- end ("0.25", "0.5"), under ten to one ("3.1"), else whole ("12").
@@ -328,7 +353,7 @@ end
 -- The three numbers and each spell's biggest crit, read again every second.
 local function Numbers()
 	local s = AZS_STATS
-	if s and s.dmg then
+	if s and s.dmg and SUIC.DB().buildStats then
 		stats:SetText("|cffffd100"..SUIC.T("Damage").."|r "..(s.dmg >= 1 and "+" or "")..Pct(s.dmg - 1)
 			.."    |cffffd100"..SUIC.T("Crit").."|r "..string.format("%.1f%%", (s.crit or 0) * 100)
 			.."    |cffffd100"..SUIC.T("Crit Dmg").."|r "..Pct(s.cm or 0))
@@ -385,6 +410,7 @@ local function Draw()
 end
 
 local function Refresh()
+	Seat()
 	if SUIC.DB().buildList and SUIC.InRun() and AZS_SPELLS and table.getn(AZS_SPELLS) > 0 then
 		if not panel:IsShown() then
 			panel:Show()

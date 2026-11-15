@@ -493,6 +493,22 @@ SUIC.OnLootLine(function(text)
 	Refresh()
 end)
 
+-- For Run History (RunHistory.lua): the run's loot, the newest first, at most
+-- so many, and its marks.
+function SUIC.RunLoot(most)
+	local list = {}
+	for index = 1, math.min(most or KEEP, table.getn(entries)) do
+		local entry = entries[index]
+		table.insert(list, { name = entry.name, color = entry.color, count = entry.count, new = entry.new or nil,
+			at = entry.at, item = entry.item, icon = SUIC.LootIcon(entry.name, entry.item) })
+	end
+	return list
+end
+
+function SUIC.RunMarks()
+	return earned.total > 0 and earned.total or nil
+end
+
 SUIC.RefreshLootList = function()
 	SUIC.RefreshLoot()
 	Refresh()

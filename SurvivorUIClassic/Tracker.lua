@@ -199,6 +199,11 @@ local function NewRun()
 	end
 end
 
+-- For Run History (RunHistory.lua): [the boss's place] = the second it fell.
+function SUIC.BossFell()
+	return fellAt
+end
+
 local function Health(name)
 	local bosses = AZS_GetBosses and AZS_GetBosses() or {}
 	for index = 1, table.getn(bosses) do

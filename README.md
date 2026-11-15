@@ -34,7 +34,8 @@ What it gives:
 - **Frames a second** in the screen's bottom left corner, and **a border round the game's clock** under the minimap. Hover it for your choices: your computer's time or any time zone, 24 or 12 hours.
 - **The whole interface's size**, in the options' General tab.
 - **Damage meter.** Damage done, damage a second, healing, the last boss fight or the party, with each spell's icon, its number and share; the lines under 10% folded into Others (the button by its title), Reset to count Damage Done and DPS from now on (the arrow beside it), as tall as the lines you set, a scroll bar for the rest, in the font size you set.
-- **Build list.** Your Damage, Crit and Crit Dmg in its title; your six spell slots, filled or empty, by rank, the highest first, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart. Hover a biggest crit for that spell's crits and hits this run.
+- **Run History.** Every run you end, kept with its numbers, build, equipment, talents, damage and loot, the tooltips as they read that day: `/suic history`, or the small button in the Build panel.
+- **Build list.** Your six spell slots, filled or empty, by rank, the highest first, with each spell's biggest crit this run, its cooldown and its rank, and your racial apart. Hover a biggest crit for that spell's crits and hits this run.
 - **Jewelry.** The neck, rings and trinkets you wear this run, and what each one gives.
 - **Combat text in Barlow.** The damage you deal and the damage you take, in Barlow Condensed, each at 30 to 100% of its size, or turned off altogether.
 - **Nameplates** on: V shows or hides the enemies', Shift-V the friends'. The options can show only your target's, or only the bosses', guardians' and elites' (your target's always).
@@ -87,15 +88,36 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 - `/suic`: the options, or the choice panel while Survivor UI is in use.
 - `/suic move`: Move frames.
 - `/suic reset`: every frame back in its first place.
+- `/suic history`: Run History, the runs you ended, each with its numbers, build, damage and loot.
 - `/suic perf`: the performance monitor: the frame rate, the slow frames and how much of each frame goes to addons, then the time, calls and memory garbage of every addon's scripts. Report saves it all; `/suic perf off` stops it.
 
 ## Changes
 
-### 0.2.23 (unreleased)
+### 0.2.23, 2026-11-15
+
+The big one: Run History comes to SurvivorUI Classic, the action bar becomes the Build panel, the damage meter goes down by levels, and your damage numbers can sit right on the enemies.
 
 #### New
 
-- **The Build panel:** the action bar as a panel of the same make as the others, in place of the game's bar. Each spell's icon stays in sight through its cooldown, a gold line at its foot running down with it, its rim flashing gold as the spell goes off. On the icon, its rank; under it, a small bar of its share of the run's damage in the damage meter's color, the share in numbers and its cooldown, green with the hourglass at the game's floor. On top, your Damage, Crit, Crit Dmg and Luck in the stats panel's colors; hover Luck for the odds of a rare, an epic and a legendary. The character and talent buttons, small, beside the racial; the level and the experience bar at the panel's foot. The talents' cooldowns stand in columns at the panel's left, your pets, summons and totems at its right, and the Level Up! button on its top. The spells stay where the game lays them while it is up. Off in the options' Action bar tab ("The Build panel in place of the game's bar"), and the game's bar comes back as it was, with everything round it in its old place.
+- **Run History:** every run you end is kept, with all that made it. Open it with the new small button under the talents' one in the Build panel, or with `/suic history`.
+  - **The list:** your runs at the left, the newest first, each with its result in color (Victory, Fallen, Left), class, level, zone, Heroic, Hyper and Endless, how long it took and how long ago it was.
+  - **Summary:** run time, level, kills, elites, guardians, bosses, total damage, DPS, healing, damage taken, gold, caches, marks and talent XP, each with its name. Under them the bosses, when each was due and when it fell; in an endless run, the bosses killed after the victory apart.
+  - **Build:** your spells by rank, then by damage, each in its color in that run's damage meter, with its rank, cooldown, damage, share and biggest crit. Your jewelry, a jewel's rank always in sight. Your armor and weapons, the set they make and the set bonuses that were on. Your talents as three small trees, the ones you had lit with their rank.
+  - **Damage:** a bar for each source in the colors of that run's meter, with its damage and share, then total damage, DPS and healing. In a party, a bar for each hero in its class's color.
+  - **Loot:** what the run dropped, how many and when, and the marks it gave.
+  - **Full view:** one button shows all four pages at once, side by side.
+  - **Tooltips kept with the run:** the mouse on a spell, a jewel, a piece of armor or a drop shows its tooltip as it read at the end of that run, so an old run still reads true after an upgrade or a game patch.
+  - **Pin and Delete:** a pinned run is never let go; Delete asks twice.
+  - **Yours to set:** the options' Run History tab chooses which runs are kept (all, victories only, none) and how many, 100 as it comes.
+- **The Build panel:** the action bar as a panel of the same make as the others, in place of the game's bar. Each spell's icon stays in sight through its cooldown, a gold line at its foot running down with it, its rim flashing gold as the spell goes off. Under it, its rank and its cooldown, green with the hourglass at the game's floor. On top, your Damage, Crit, Crit Dmg and Luck in the stats panel's colors; hover Luck for the odds of a rare, an epic and a legendary. The character, talent and Run History buttons, small, beside the racial; the level and the experience bar at the panel's foot. The talents' cooldowns stand in columns at the panel's left, your pets, summons and totems at its right, and the Level Up! button on its top. The spells stay where the game lays them while it is up. Off in the options' Action bar tab ("The Build panel in place of the game's bar"), and the game's bar comes back as it was, with everything round it in its old place.
+- **The damage meter, by levels:** click a line to go down, right-click to come back: the party, then a hero, then one source. Its title is the way you came, each step a click back. Two rows of buttons choose what is counted (Damage or Healing) and over what (the run, the boss fight, right now). In a source of your own, its hits, crits, average hit and biggest hit. The DPS and the total stand at the foot, each with its name, and the + opens a second meter beside the first, with a choice of its own.
+- **Damage numbers on the enemies:** Survivor UI's numbers now come on, and a new choice, "Over the enemies", holds each number where its hit landed: it comes up on the enemy with its spell's icon, climbs a line and fades there, the hits on one enemy in a small pile, the crits in gold. Nothing of the damage you deal scrolls up a column at the side. Untick "Over the enemies" for the columns, or "Use them in place of the game's numbers" for the game's own (Combat text).
+
+#### Changes
+
+- **Combat text sizes:** the damage you deal and the damage you take both come at 60% (40 and 30% before). A size you chose stays.
+- **Build list:** your Damage, Crit and Crit Dmg over the spells are now a choice, off as it comes, since the Build panel and the stats panel show them; the list is a line shorter without them ("Damage, Crit and Crit Dmg on top", Build list).
+- **A Hunter's pets** are a line each in the damage meter (Wolf, Raptor), in place of one "Pets" line.
 
 ### 0.2.22, 2026-11-10
 

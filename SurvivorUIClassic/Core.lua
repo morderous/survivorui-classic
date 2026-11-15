@@ -49,6 +49,7 @@ local DEFAULTS = {
 	bossMost = 4,               -- guardians and elites at most; the bosses always
 	bossText = "percent",        -- the boss bars' health: off, value, percent or both
 	buildList = true,
+	buildStats = false,        -- the hero's Damage, Crit and Crit Dmg on the build list's top
 	jewelry = true,
 	meter = true,
 	meterLines = 7,
@@ -74,6 +75,9 @@ local DEFAULTS = {
 	floorHourglass = true,     -- an hourglass on a spell's button at the game's floor (FloorHourglass.lua)
 	barPanel = true,           -- the action bar as the Build panel (BarPanel.lua)
 	barFlash = true,           -- a panel button's rim flashing gold as its spell goes off (Cooldowns.lua)
+	historyWhich = "all",      -- the runs kept (RunHistory.lua): "all", "victories" or "none"
+	historyKeep = 100,         -- how many, the oldest going first
+	historyFull = false,       -- the window's Full view: its four tabs side by side
 	lootLog = true,            -- the loot notices (Loot.lua)
 	lootList = true,           -- the loot list and the run's marks (LootList.lua)
 	summons = true,            -- the summons and totems (Summons.lua)
@@ -89,7 +93,7 @@ local DEFAULTS = {
 	plateDebuffs = true,       -- your debuffs inside the elites', guardians' and bosses' plates
 	plateText = "percent",     -- the plates' health: off, value, percent or both
 	combatText = true,         -- the game's combat text at all (CombatText.lua)
-	ctColumns = false,         -- Survivor UI's numbers in its place (CombatColumns.lua)
+	ctColumns = true,          -- Survivor UI's numbers in its place (CombatColumns.lua)
 	ctIcons = true,            -- each with its source's icon
 	ctColors = true,           -- in the damage meter's color
 	ctAdd = true,              -- hits close together added up (x3)
@@ -97,9 +101,10 @@ local DEFAULTS = {
 	ctPeriodic = true,         -- damage over time
 	ctHitsTaken = true,        -- the damage you take
 	ctHeals = true,            -- the healing
+	ctOverEnemies = true,      -- the hits over the enemies they land on, not in a column
 	ctSize = 1,
-	numberSize = 40,           -- the damage you deal's numbers, in Barlow, 30 to 100%
-	takenSize = 30,            -- the damage you take's, in Barlow too, 30 to 100%
+	numberSize = 60,           -- the damage you deal's numbers, in Barlow, 30 to 100%
+	takenSize = 60,            -- the damage you take's, in Barlow too, 30 to 100%
 }
 
 -- The meter's page of before 0.2.23 as the metric and the period it shows now.
@@ -160,6 +165,23 @@ function SUIC.DB()
 	if db.defaults < 8 then
 		db.meterMetric, db.meterPeriod = SUIC.MeterViewOf(db.meterMode)
 		db.defaults = 8
+	end
+	-- The game's numbers at 60% where they were as they came (40 and 30%), once;
+	-- a size chosen stays.
+	if db.defaults < 9 then
+		if tonumber(db.numberSize) == 40 then
+			db.numberSize = 60
+		end
+		if tonumber(db.takenSize) == 30 then
+			db.takenSize = 60
+		end
+		db.defaults = 9
+	end
+	-- The addon's own numbers on, the ones that stay on the enemy (Lucas,
+	-- 2026-11-15), once: they were off as they came, so off was nobody's choice.
+	if db.defaults < 10 then
+		db.ctColumns = true
+		db.defaults = 10
 	end
 	filled = db
 	return db
@@ -581,12 +603,14 @@ SlashCmdList["SURVIVORUICLASSIC"] = function(msg)
 		SUIC.ResetPositions()
 	elseif msg == "guide" then
 		SUIC.ToggleGuide()
+	elseif msg == "history" and SUIC.ToggleRunHistory then
+		SUIC.ToggleRunHistory()
 	elseif string.find(msg, "^perf") and SUIC_TogglePerf then
 		-- The performance monitor (Perf.lua): "perf", "perf off", "perf reset", "perf report".
 		local _, _, rest = string.find(msg, "^perf%s*(.-)%s*$")
 		SUIC_TogglePerf(rest or "")
 	elseif msg == "help" then
-		SUIC.Print(SUIC.TF("/suic for the options, /suic move to move frames, /suic guide for the guide, /suic reset to put them all back, /suic perf for the performance monitor. Version {1}.", SUIC.VERSION))
+		SUIC.Print(SUIC.TF("/suic for the options, /suic move to move frames, /suic guide for the guide, /suic history for the runs kept, /suic reset to put them all back, /suic perf for the performance monitor. Version {1}.", SUIC.VERSION))
 	else
 		SUIC.ToggleOptions()
 	end
