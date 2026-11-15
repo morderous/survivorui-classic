@@ -126,6 +126,129 @@ local function Key(amount, crit)
 	return crit and -1 - amount or amount
 end
 
+------------------------------------------------------------------------------
+-- The hero's hits by the meter's line, for the damage meter's detail of a
+-- source (Meter.lua), which the game's meter API has no count of: each hit of
+-- the game's feed counted under the line the meter puts it on ("Frenzy" for
+-- the Multi-Shot it fires), four times over: the whole run; since the meter's
+-- Reset; the boss fight (while the game says one is on; a new fight starts it
+-- over); and second by second, for the last ones. Each count: n, the hits;
+-- crits; sum, their damage as dealt (whole, even past the enemy's last
+-- health: more than the meter's total); best, the biggest. Only while the
+-- meter asks for it (on). The pets come all as one line, "Pets".
+local blows = {
+	lines = {},                     -- [the line's name] = { run, since, boss, now = the seconds' ring }
+	SECONDS = 128,                  -- the ring: more than the meter's longest window
+	window = { n = 0, crits = 0, sum = 0, best = 0 },
+}
+SUIC.Blows = blows
+
+local function Fresh()
+	return { n = 0, crits = 0, sum = 0, best = 0 }
+end
+
+-- Once a frame: a new run starts all over, a new boss fight its own count.
+function blows.Frame(now)
+	blows.at = now
+	blows.second = math.floor(now)
+	local context = SUIC.MeterFeed and SUIC.MeterFeed.Context()
+	local run = context and context.runId
+	if run ~= blows.run then
+		blows.run, blows.lines, blows.fight, blows.lost = run, {}, nil, nil
+	end
+	local fight = context and context.encounter
+	blows.fighting = type(fight) == "table" and fight.state == "active"
+	if blows.fighting and fight.encounterId ~= blows.fight then
+		blows.fight = fight.encounterId
+		for _, line in pairs(blows.lines) do
+			line.boss = nil
+		end
+	end
+end
+
+local function Count(tally, amount, crit)
+	tally.n = tally.n + 1
+	tally.sum = tally.sum + amount
+	if crit then
+		tally.crits = tally.crits + 1
+	end
+	if amount > tally.best then
+		tally.best = amount
+	end
+end
+
+function blows.Seen(name, amount, crit, now)
+	if blows.at ~= now then
+		blows.Frame(now)
+	end
+	if not blows.run then
+		return
+	end
+	local line = blows.lines[name]
+	if not line then
+		line = { run = Fresh(), since = Fresh(), now = {} }
+		blows.lines[name] = line
+	end
+	Count(line.run, amount, crit)
+	Count(line.since, amount, crit)
+	if blows.fighting then
+		if not line.boss then
+			line.boss = Fresh()
+		end
+		Count(line.boss, amount, crit)
+	end
+	-- This second's count, in the place an old second's had.
+	local second = blows.second
+	local place = math.mod(second, blows.SECONDS) + 1
+	local bucket = line.now[place]
+	if not bucket then
+		bucket = Fresh()
+		line.now[place] = bucket
+	end
+	if bucket.at ~= second then
+		bucket.at, bucket.n, bucket.crits, bucket.sum, bucket.best = second, 0, 0, 0, 0
+	end
+	Count(bucket, amount, crit)
+end
+
+-- The meter's Reset: the counts since it start over.
+function blows.Mark()
+	for _, line in pairs(blows.lines) do
+		line.since = Fresh()
+	end
+end
+
+-- A line's count by its name: span "run", "since" (Reset), "boss", or "now"
+-- with the seconds back. Nil for a line no hit of this run was seen on; a
+-- count of none where the span has none. The table is the meter's to read,
+-- not to keep.
+function blows.Of(name, span, seconds)
+	local now = GetTime()
+	if blows.at ~= now then
+		blows.Frame(now)
+	end
+	local line = blows.lines[name]
+	if not line then
+		return nil
+	end
+	local sum = blows.window
+	sum.n, sum.crits, sum.sum, sum.best = 0, 0, 0, 0
+	if span ~= "now" then
+		return line[span] or sum
+	end
+	local from = math.floor(now) - (seconds or 30)
+	for place = 1, blows.SECONDS do
+		local bucket = line.now[place]
+		if bucket and bucket.at > from then
+			sum.n, sum.crits, sum.sum = sum.n + bucket.n, sum.crits + bucket.crits, sum.sum + bucket.sum
+			if bucket.best > sum.best then
+				sum.best = bucket.best
+			end
+		end
+	end
+	return sum
+end
+
 -- The oldest hit let go, from its list too: it is the oldest there.
 function feed.DropOldest()
 	local hit = feed.ring[feed.first]
@@ -153,12 +276,21 @@ function feed.Read()
 			break
 		end
 		feed.cursor = result.cursor
+		-- Hits the game let go before they were read: the counts are short.
+		local dropped = tonumber(result.droppedCount) or 0
+		if dropped > 0 and dropped ~= feed.dropped then
+			blows.lost = true
+		end
+		feed.dropped = dropped
 		local events = result.events or {}
 		local count = table.getn(events)
 		for index = 1, count do
 			local one = events[index]
 			local amount = tonumber(one.amount)
 			if one.kind == "damage" and one.meterSource and amount then
+				if blows.on then
+					blows.Seen(one.meterSource, amount, one.critical, now)
+				end
 				local hit = table.remove(feed.spare) or {}
 				hit.at, hit.amount, hit.crit, hit.ability = now, amount, one.critical, one.abilityName
 				hit.meter, hit.key = one.meterSource, one.meterSourceKey
@@ -225,6 +357,14 @@ function feed.Line(name, line)
 	return found.meter
 end
 
+-- The feed read now, where this frame has not yet: for the meter's counts,
+-- which want every hit, not only those a combat log's line asks after.
+function SUIC.ReadHits()
+	if blows.on and AZS_GetCombatTextEvents and feed.readAt ~= GetTime() then
+		feed.Read()
+	end
+end
+
 -- The meter's line for a line of the combat log, when it is not the spell the
 -- line names: a Flametongue Weapon's Fire Nova, a demon's own spell. Nil for the
 -- spell itself and for a hit not found: by its amount and crit, the same spell's
@@ -285,9 +425,27 @@ local function Worth(message)
 	return amount ~= nil and amount > CritFloor()
 end
 
+-- A Hunter's White Devilsaur (an achievement's look): the wolf and the raptor
+-- each take its look and its name, "White Devilsaur hits Kobold Vermin for
+-- 991.", while the game's meter still has them as Wolf and Raptor, and nothing
+-- else says the look is on. So the combat log's first such line of a run says
+-- it: the meter then has the two as one line by that name (Meter.lua).
+local PET_LOOK = "White Devilsaur"
+local petLook = {}
+
+-- The look one's own pets wear this run, or nil.
+function SUIC.PetLook()
+	if petLook.run ~= nil and petLook.run == AZS_ZONE_UPDATED then
+		return PET_LOOK
+	end
+end
+
 local events = CreateFrame("Frame")
 events:SetScript("OnEvent", function()
 	if arg1 then
+		if event == "CHAT_MSG_COMBAT_PET_HITS" and petLook.run ~= AZS_ZONE_UPDATED and string.find(arg1, "^White Devilsaur ") then
+			petLook.run = AZS_ZONE_UPDATED
+		end
 		SUIC.SpellRecord("")
 		if SUIC.Overflow("crits") and not Worth(arg1) then
 			return

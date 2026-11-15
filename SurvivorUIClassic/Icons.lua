@@ -25,6 +25,7 @@ local PETS = {
 	["Treant"] = "Spell_Nature_ForceOfNature",
 	["Wolf"] = "Ability_Hunter_Pet_Wolf",
 	["Raptor"] = "Ability_Hunter_Pet_Raptor",
+	["White Devilsaur"] = "Ability_Hunter_Pet_Raptor", -- the look a hunter's wolf and raptor take (Survivor UI's)
 	["Pets"] = "Ability_Hunter_BeastCall",        -- the game's meter's one line for a hunter's beasts
 }
 

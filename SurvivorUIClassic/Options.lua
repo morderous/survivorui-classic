@@ -380,9 +380,9 @@ PAGES[9] = { "Damage meter", "Damage done, healing, the last boss fight and the 
 	end, function(value) return tostring(value) end)
 	local sizes = {}
 	for size = 8, 14 do
-		table.insert(sizes, { size, size == 10 and SUIC.TF("{1} (default)", size) or tostring(size) })
+		table.insert(sizes, { size, size == 8 and SUIC.TF("{1} (default)", size) or tostring(size) })
 	end
-	Dropdown(page, "Font size", sizes, function() return tonumber(SUIC.DB().meterFont) or 10 end, function(value)
+	Dropdown(page, "Font size", sizes, function() return tonumber(SUIC.DB().meterFont) or 8 end, function(value)
 		SUIC.DB().meterFont = value
 		SUIC.ApplyMeterFont()
 	end)

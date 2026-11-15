@@ -52,7 +52,10 @@ local DEFAULTS = {
 	jewelry = true,
 	meter = true,
 	meterLines = 7,
-	meterMode = "damage",
+	meterMode = "damage",      -- the page, in a game without the meter API v1 (before 0.2.23, everywhere)
+	meterMetric = "damage",    -- "damage" or "healing"
+	meterPeriod = "run",       -- "run", "boss" (the last boss fight) or "now" (the last seconds)
+	meter2 = {},               -- the second meter window: open, metric, period
 	meterFold = false,         -- the lines under meterFoldShare% folded into Others (off: Lucas, 2026-11-03)
 	meterFoldShare = 10,
 	mapButton = true,          -- the addon's button on the minimap
@@ -96,6 +99,11 @@ local DEFAULTS = {
 	numberSize = 40,           -- the damage you deal's numbers, in Barlow, 30 to 100%
 	takenSize = 30,            -- the damage you take's, in Barlow too, 30 to 100%
 }
+
+-- The meter's page of before 0.2.23 as the metric and the period it shows now.
+function SUIC.MeterViewOf(mode)
+	return mode == "healing" and "healing" or "damage", mode == "bosses" and "boss" or "run"
+end
 
 local filled
 function SUIC.DB()
@@ -145,6 +153,11 @@ function SUIC.DB()
 	if db.defaults < 7 then
 		db.overCards = nil
 		db.defaults = 7
+	end
+	-- The meter's five pages gone for a metric and a period (0.2.23), once.
+	if db.defaults < 8 then
+		db.meterMetric, db.meterPeriod = SUIC.MeterViewOf(db.meterMode)
+		db.defaults = 8
 	end
 	filled = db
 	return db
