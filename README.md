@@ -93,6 +93,14 @@ SurvivorUI Classic is a branch of Survivor UI, and each works on its own: you ne
 
 ## Changes
 
+### 0.2.24, 2026-11-16
+
+A hotfix for an error on heals while Survivor UI is the one in use.
+
+#### Hotfixes
+
+- **Healing numbers:** with both addons installed and Survivor UI chosen, a heal no longer brings up a `CombatColumns.lua` error. SurvivorUI Classic now leaves the heals alone while it stands aside.
+
 ### 0.2.23, 2026-11-15
 
 The big one: Run History comes to SurvivorUI Classic, the action bar becomes the Build panel, the damage meter goes down by levels, and your damage numbers can sit right on the enemies.

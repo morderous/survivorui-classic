@@ -543,7 +543,8 @@ healWatch:SetScript("OnUpdate", function()
 		return
 	end
 	healAt = AZS_HEALING_UPDATED
-	local on = healPrimed and On()
+	-- Only with this addon running: standing aside, its columns were never made.
+	local on = healPrimed and SUIC.active and On()
 	local worth = math.max(1, HEAL_SHARE * (UnitHealthMax("player") or 0))
 	for index = 1, table.getn(AZS_HEALING) do
 		local line = AZS_HEALING[index]
